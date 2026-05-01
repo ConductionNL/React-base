@@ -8,6 +8,10 @@ kind: AppProject
 metadata:
   name: react-platform
   namespace: argocd
+  annotations:
+    # Wave -1: zorgt dat de AppProject bestaat voordat de ApplicationSet
+    # erop wijst (en voor de Applications die die set genereert).
+    argocd.argoproj.io/sync-wave: "-1"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:

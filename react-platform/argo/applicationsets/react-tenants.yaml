@@ -24,7 +24,10 @@ spec:
   generators:
     - git:
         repoURL: "https://github.com/ConductionNL/React-base.git"
-        revision: HEAD
+        # TODO(post-canary): zet terug naar `HEAD` zodra development naar
+        # main is gemerged. Voor de eerste live test (canary.openwoo.app)
+        # wijst de generator én de tenant-source naar development.
+        revision: development
         files:
           - path: "react-platform/values/tenants/tenant-*.yaml"
 
@@ -48,7 +51,8 @@ spec:
       sources:
         # Vendored woo-website chart in this repo.
         - repoURL: "https://github.com/ConductionNL/React-base.git"
-          targetRevision: HEAD
+          # TODO(post-canary): zet terug naar `HEAD` na merge development → main.
+          targetRevision: development
           path: charts/woo-website
           helm:
             releaseName: "woo-website"
@@ -120,7 +124,8 @@ spec:
 
         # Values repo (this repo) — anchors $values references above.
         - repoURL: "https://github.com/ConductionNL/React-base.git"
-          targetRevision: HEAD
+          # TODO(post-canary): zet terug naar `HEAD` na merge development → main.
+          targetRevision: development
           ref: values
 
       destination:

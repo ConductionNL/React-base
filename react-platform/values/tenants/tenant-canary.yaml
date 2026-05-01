@@ -5,3 +5,11 @@ tenant:
   name: canary
   environment: prod
   wave: "0"
+
+# Image-tag override voor de eerste test. common.yaml pin op "1.0.0" bestaat
+# (waarschijnlijk) niet in GHCR — alle bestaande pods draaien :latest. Pin
+# hier expliciet :latest tot we een echte semver/digest hebben (task 1.3).
+# TODO: vervangen door semver/digest na verificatie tegen GHCR.
+pwa:
+  image:
+    tag: latest
