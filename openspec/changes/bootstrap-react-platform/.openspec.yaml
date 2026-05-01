@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-05-01
+updated: 2026-05-01
+pivot: Mirror Nextcloud-base GitOps shape for the WOO PWA — replace per-tenant generator script with ApplicationSet + layered values
