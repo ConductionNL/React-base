@@ -68,7 +68,7 @@ Conventions are decided (see design.md "Resolved Questions"); discovery is now s
 
 ## 7. Docs
 
-- [ ] 7.1 `docs/ADDING-TENANT.md`: copy template, edit name + env, commit, push. ApplicationSet auto-detects. Include the namespace-pairing rule (frontend lands in same namespace as Nextcloud co-tenant; that namespace must already exist).
+- [ ] 7.1 `docs/ADDING-TENANT.md`: copy template, edit name + env, commit, push. ApplicationSet auto-detects. Include the namespace-pairing rule (frontend lands in same namespace as Nextcloud co-tenant; that namespace must already exist). State explicitly that **DNS is automatic** — `cluster-infra/external-dns` creates the Cloudflare record from the tenant's Ingress hostname; the operator does not touch Cloudflare. Same for TLS (cert-manager via HTTP-01).
 - [ ] 7.2 `docs/ROLLOUTS.md`: sync windows, wave 0 → 1 → 2 → 3 procedure, image-tag bump procedure (platform change → 17:00 window), rollback (revert PR).
 - [ ] 7.3 `docs/MIGRATION.md`: per-tenant cut-over runbook from "namespace `<name>`" to "namespace `<name>-<env>`". Lifted from design.md Migration Plan plus concrete `kubectl` commands.
 

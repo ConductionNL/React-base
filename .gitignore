@@ -12,6 +12,11 @@ charts/**/charts/
 # Secrets — never commit, per global policy
 *.secret.yaml
 *.secret.yml
+*.pem
+*.key
+*_rsa
+*.crt
+*.p12
 secrets/
 env.local
 .env

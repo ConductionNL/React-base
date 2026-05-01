@@ -11,6 +11,14 @@ WOO PWA tenants today are deployed via `mcc create-react <org> <env>`, which gen
 
 The Helm chart `helm/woo-website` in `woo-website-template-apiv2` is already platform-grade (non-root, capability drop, explicit probes, dedicated SA, resource limits). Its `values.yaml` even names react-base in a comment as the intended platform layer. The chart does not need to change for this proposal.
 
+### External dependencies (already in place — not in scope)
+
+- **DNS**: `cluster-infra/external-dns/` runs cluster-wide with the Cloudflare provider and `policy: sync`. It watches `Ingress` resources and manages records in the `commonground.nu`, `openwoo.app`, and `opencatalogi.nl` zones. Tenant Ingress creation auto-creates the DNS record; tenant deletion auto-reaps it. **No Cloudflare action is needed when adding or removing a tenant.**
+- **TLS**: cert-manager issues certificates via HTTP-01. Cloudflare proxy is intentionally off in `cluster-infra` so the challenge can complete; we must not flip it on.
+- **Ingress controller**: ingress-nginx is the cluster's ingress class and is what `external-dns` resolves to.
+
+These three dependencies are owned by `cluster-infra` and are stable. If any of them moves (e.g. cert-manager → cert-issuer change, ingress class swap, additional Cloudflare zone), this design's `common.yaml` is the right place to react.
+
 ## Goals / Non-Goals
 
 **Goals:**

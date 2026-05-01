@@ -46,6 +46,8 @@ Each generated manifest is ~50 lines that mostly repeat platform convention. Con
 - `secrets`: the WOO PWA serves only public content. No tenant secrets, no ESO, no `create-tenant-secret.sh`.
 - `shared-platform-services`: no Redis, no PgBouncer, no DB layer files. Static nginx pod has no shared state.
 - `storage`: no PVC, no StorageClass change. Image is self-contained; runtime config is a small ConfigMap written by the chart.
+- `dns`: handled by `cluster-infra/external-dns` (Cloudflare provider, `policy: sync`, zones `commonground.nu`/`openwoo.app`/`opencatalogi.nl`). Tenant Ingress creation/deletion auto-creates and auto-reaps the DNS record — operators never touch Cloudflare to add a tenant.
+- `tls`: cert-manager + HTTP-01, already wired in `cluster-infra`. No per-tenant cert configuration in this repo.
 
 ## Impact
 
