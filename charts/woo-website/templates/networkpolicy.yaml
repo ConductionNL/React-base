@@ -1,0 +1,92 @@
+{{- /*
+NetworkPolicies for the WOO PWA pod.
+
+Pod-label scoped (selector: app.kubernetes.io/part-of=react-platform) so
+they coexist with Nextcloud co-tenant policies in the same namespace
+without interfering — see Decision 4 in
+openspec/changes/bootstrap-react-platform/design.md.
+
+Three policies layered:
+  1. default-deny    — deny all ingress + egress for react pods
+  2. allow-ingress   — permit traffic from ingress-nginx
+  3. allow-egress    — permit DNS + HTTPS to anywhere (upstream API is
+                       reached via public ingress, not pod-to-pod)
+
+Added to the vendored chart by react-base — not in upstream
+woo-website-template-apiv2. See charts/woo-website/UPSTREAM.
+*/}}
+{{- if .Values.networkPolicy.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "api-platform.fullname" . }}-default-deny
+  labels:
+    {{- include "api-platform.labelsPWA" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: react-platform
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "api-platform.fullname" . }}-allow-ingress
+  labels:
+    {{- include "api-platform.labelsPWA" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: react-platform
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.ingressNamespace | default "ingress-nginx" }}
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "api-platform.fullname" . }}-allow-egress
+  labels:
+    {{- include "api-platform.labelsPWA" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: react-platform
+  policyTypes:
+    - Egress
+  egress:
+    # DNS — cluster resolver
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # HTTPS to anywhere — upstream API hit via public ingress.
+    # Locking this down to commonground.nu IPs is fragile (Cloudflare-backed,
+    # IPs rotate). 443-only is the practical baseline.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              # RFC1918 — block in-cluster lateral movement.
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
+{{- end }}

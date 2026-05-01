@@ -1,0 +1,16 @@
+Vendored from: https://github.com/ConductionNL/woo-website-template-apiv2
+Path:           helm/woo-website
+Branch:         refactor/platform-grade-cleanup
+Commit:         b1ac4e89e95e0170a24016b323a6eb888c60d8e6
+Vendored at:    2026-05-01
+
+To re-sync: copy the chart back from the upstream repo at the desired commit
+and update this file. Bumping the vendored chart is a platform-level change
+and falls under the AppProject sync window (see argo/projects/react-platform.yaml).
+
+Divergences from upstream (re-apply on every sync):
+  - templates/networkpolicy.yaml  — added by react-base. Pod-label-scoped
+                                    NetworkPolicies (default-deny, allow-ingress
+                                    from ingress-nginx, allow-egress 443).
+  - values.yaml                   — added `networkPolicy.{enabled,ingressNamespace}`
+                                    block at the bottom for the policy toggle.

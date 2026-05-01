@@ -1,0 +1,6 @@
+---
+# Synthetic test tenant — minimal 2-line case (no branding overrides).
+# Will be replaced by real per-tenant values during canary cut-over.
+tenant:
+  name: test-mcc
+  environment: accept

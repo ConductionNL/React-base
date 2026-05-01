@@ -1,0 +1,157 @@
+---
+# ApplicationSet that generates one Argo CD Application per tenant file in
+# react-platform/values/tenants/.
+#
+# Per-tenant inputs come from tenant-<name>.yaml (just `name` + `environment`
+# is enough). Hostname, upstream API host/base, TLS secret, and namespace
+# are all derived here from convention + the tenant.environment switch.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: react-tenants
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/compare-options: IgnoreExtraneous
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=default"]
+
+  # Don't auto-delete tenant Applications when their tenant-*.yaml is removed
+  # (manual cleanup forces operator review).
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+
+  generators:
+    - git:
+        repoURL: "https://github.com/ConductionNL/React-base.git"
+        revision: HEAD
+        files:
+          - path: "react-platform/values/tenants/tenant-*.yaml"
+
+  template:
+    metadata:
+      # Application name matches today's create_react.sh output exactly so
+      # cut-over per tenant is "delete old, ApplicationSet creates same name."
+      name: "{{ .tenant.name }}-{{ .tenant.environment }}-reactfront"
+      namespace: argocd
+      labels:
+        app.kubernetes.io/part-of: react-platform
+        react.platform/tenant: "{{ .tenant.name }}"
+        react.platform/environment: "{{ .tenant.environment }}"
+      annotations:
+        argocd.argoproj.io/sync-wave: "{{ default \"1\" .tenant.wave }}"
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: react-platform
+
+      sources:
+        # Vendored woo-website chart in this repo.
+        - repoURL: "https://github.com/ConductionNL/React-base.git"
+          targetRevision: HEAD
+          path: charts/woo-website
+          helm:
+            releaseName: "woo-website"
+            valueFiles:
+              - "$values/react-platform/values/common.yaml"
+              - "$values/react-platform/values/env/{{ .tenant.environment }}.yaml"
+              - "$values/react-platform/values/tenants/tenant-{{ .tenant.name }}.yaml"
+            # Inline values: derived hostname, upstream URL, TLS secret name,
+            # branding env, common labels for NetworkPolicy targeting.
+            values: |
+              {{- $name := .tenant.name -}}
+              {{- $env := .tenant.environment -}}
+              {{- $domainSuffix := "" -}}
+              {{- $upstreamSuffix := "" -}}
+              {{- if eq $env "prod" -}}
+              {{- $domainSuffix = "openwoo.app" -}}
+              {{- $upstreamSuffix = "commonground.nu" -}}
+              {{- else -}}
+              {{- $domainSuffix = printf "%s.openwoo.app" $env -}}
+              {{- $upstreamSuffix = printf "%s.commonground.nu" $env -}}
+              {{- end -}}
+              {{- $computedHost := printf "%s.%s" $name $domainSuffix -}}
+              {{- $host := default $computedHost .tenant.hostname -}}
+              {{- $upstreamHost := printf "%s.%s" $name $upstreamSuffix -}}
+              {{- $upstreamBase := printf "https://%s/apps/opencatalogi/api" $upstreamHost -}}
+              {{- $apiBase := default $upstreamBase .tenant.apiBaseUrl -}}
+              {{- $branding := default (dict) .tenant.branding -}}
+              {{- $extraEnv := default (dict) .tenant.env -}}
+              commonLabels:
+                app.kubernetes.io/part-of: react-platform
+                react.platform/tenant: "{{ $name }}"
+                react.platform/environment: "{{ $env }}"
+              global:
+                domain: "{{ $host }}"
+                tls: true
+              pwa:
+                upstream:
+                  host: "{{ $upstreamHost }}"
+                  base: "{{ $apiBase }}"
+                env:
+                  {{- with index $branding "organisationName" }}
+                  GATSBY_ORGANISATION_NAME: "{{ . }}"
+                  {{- end }}
+                  {{- with index $branding "themeClassname" }}
+                  NL_DESIGN_THEME_CLASSNAME: "{{ . }}"
+                  {{- end }}
+                  {{- with index $branding "jumbotronImageUrl" }}
+                  GATSBY_JUMBOTRON_IMAGE_URL: "{{ . }}"
+                  {{- end }}
+                  {{- with index $branding "faviconUrl" }}
+                  GATSBY_FAVICON_URL: "{{ . }}"
+                  {{- end }}
+                  {{- if index $branding "footerHideLogo" }}
+                  GATSBY_FOOTER_HIDE_LOGO: "{{ index $branding "footerHideLogo" }}"
+                  {{- end }}
+                  {{- range $k, $v := $extraEnv }}
+                  {{ $k }}: "{{ $v }}"
+                  {{- end }}
+              ingress:
+                hosts:
+                  - host: "{{ $host }}"
+                    paths:
+                      - path: /
+                        pathType: ImplementationSpecific
+                tls:
+                  - secretName: "{{ $name }}-{{ $env }}-tls"
+                    hosts:
+                      - "{{ $host }}"
+
+        # Values repo (this repo) — anchors $values references above.
+        - repoURL: "https://github.com/ConductionNL/React-base.git"
+          targetRevision: HEAD
+          ref: values
+
+      destination:
+        server: https://kubernetes.default.svc
+        # Paired with the Nextcloud co-tenant namespace (e.g. almere-accept).
+        # Namespace must already exist (created by Nextcloud-base ApplicationSet).
+        namespace: "{{ .tenant.name }}-{{ .tenant.environment }}"
+
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+          allowEmpty: false
+        syncOptions:
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+
+      revisionHistoryLimit: 10
+
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas
+        - group: autoscaling
+          kind: HorizontalPodAutoscaler
+          jsonPointers:
+            - /status
