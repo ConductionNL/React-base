@@ -1,0 +1,7 @@
+---
+# Canary tenant — first live test of the react-base platform.
+# Wave 0 so it syncs before any other tenant in a platform-wide rollout.
+tenant:
+  name: canary
+  environment: prod
+  wave: "0"
