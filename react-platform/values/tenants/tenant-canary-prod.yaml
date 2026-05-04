@@ -1,0 +1,9 @@
+---
+# Canary tenant — prod environment.
+# Wave 0 zodat hij vóór alle andere prod-tenants synct.
+# Geen image-tag override — gebruikt de pin in common.yaml
+# (development-V1.0.260422), test daarmee de huidige kandidaat-versie.
+tenant:
+  name: canary
+  environment: prod
+  wave: "0"

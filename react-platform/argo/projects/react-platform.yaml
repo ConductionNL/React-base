@@ -1,0 +1,103 @@
+---
+# Argo CD AppProject for the React (WOO PWA) Platform.
+# RBAC and resource boundaries for every tenant managed by ApplicationSet
+# react-tenants. Independent from nextcloud-platform so an outage on one
+# platform cannot pause syncs on the other.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: react-platform
+  namespace: argocd
+  annotations:
+    # Wave -1: zorgt dat de AppProject bestaat voordat de ApplicationSet
+    # erop wijst (en voor de Applications die die set genereert).
+    argocd.argoproj.io/sync-wave: "-1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: "Multi-tenant WOO PWA (React/Gatsby) platform managed by GitOps"
+
+  sourceRepos:
+    - "git@github.com:ConductionNL/React-base.git"
+    - "https://github.com/ConductionNL/React-base.git"
+    - "https://github.com/conductionnl/React-base.git"
+
+  # Destinations match Nextcloud-base exactly (namespaces are shared with
+  # Nextcloud co-tenants — see openspec/changes/bootstrap-react-platform/
+  # design.md Decision 3).
+  destinations:
+    - namespace: "*-accept"
+      server: https://kubernetes.default.svc
+    - namespace: "*-test"
+      server: https://kubernetes.default.svc
+    - namespace: "*-prod"
+      server: https://kubernetes.default.svc
+
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: ResourceQuota
+    - group: ""
+      kind: LimitRange
+
+  namespaceResourceWhitelist:
+    - group: ""
+      kind: "*"
+    - group: apps
+      kind: "*"
+    - group: networking.k8s.io
+      kind: "*"
+    - group: policy
+      kind: "*"
+    - group: autoscaling
+      kind: "*"
+    - group: cert-manager.io
+      kind: "*"
+    - group: monitoring.coreos.com
+      kind: "*"
+
+  # Sync windows — platform-level changes blocked during office hours.
+  # Same shape as nextcloud-platform: weekday daytime denied, evenings and
+  # weekends allowed. Tenant additions (new tenant-*.yaml) are unaffected
+  # because they're scoped to a single Application, not the platform meta.
+  #
+  # Operational policy (CLAUDE.md): platform changes Mon–Thu 17:00–07:00
+  # only — Fri evenings and weekends require explicit operator approval.
+  # That's enforced socially, not technically.
+  syncWindows:
+    - kind: deny
+      schedule: "0 7 * * 1-5"
+      duration: 10h
+      timeZone: Europe/Amsterdam
+      applications:
+        - "react-platform"
+      manualSync: false
+
+  roles:
+    - name: platform-admin
+      description: "Full access to React/WOO platform"
+      policies:
+        - p, proj:react-platform:platform-admin, applications, *, react-platform/*, allow
+        - p, proj:react-platform:platform-admin, repositories, *, react-platform/*, allow
+      groups:
+        - platform-admins
+
+    - name: tenant-viewer
+      description: "Read-only access to tenant applications"
+      policies:
+        - p, proj:react-platform:tenant-viewer, applications, get, react-platform/*, allow
+        - p, proj:react-platform:tenant-viewer, applications, sync, react-platform/*, deny
+      groups:
+        - tenant-viewers
+
+    - name: tenant-operator
+      description: "Sync access to tenant applications"
+      policies:
+        - p, proj:react-platform:tenant-operator, applications, get, react-platform/*, allow
+        - p, proj:react-platform:tenant-operator, applications, sync, react-platform/*, allow
+        - p, proj:react-platform:tenant-operator, applications, action/*, react-platform/*, allow
+      groups:
+        - tenant-operators

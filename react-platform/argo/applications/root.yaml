@@ -1,0 +1,54 @@
+---
+# Root App-of-Apps Application for the react-platform.
+#
+# Eenmalig handmatig deployen (zie ../../docs/BOOTSTRAP.md). Daarna beheert
+# Argo zichzelf: AppProject, ApplicationSet, en — recursief — deze root
+# Application zelf, allemaal vanuit react-platform/argo/.
+#
+# Tenant-Applications worden niet door deze root gemaakt — daarvoor staat
+# de ApplicationSet `react-tenants` in de loop, die op tenant-*.yaml watcht.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: react-platform
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: react-platform
+    react.platform/component: root
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # Project default: bootstrap kan niet afhangen van de AppProject die
+  # hijzelf gaat aanmaken. Eens deployed kan dit niet schoner zonder
+  # twee-Project-bootstrap; default is acceptabel voor één meta-Application.
+  project: default
+
+  source:
+    repoURL: https://github.com/ConductionNL/React-base.git
+    # TODO(post-canary): zet terug naar `HEAD` na merge feat → development → main.
+    # Tijdens de eerste live test pulled Argo direct van de feature branch
+    # zodat we niet hoeven te wachten op PR-merge cycles.
+    targetRevision: feat/bootstrap-react-platform
+    # Recursief alles in argo/ syncen: projects/, applicationsets/, en
+    # applications/root.yaml zelf (self-management). Argo handelt circulaire
+    # self-references netjes af.
+    path: react-platform/argo
+    directory:
+      recurse: true
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 1m

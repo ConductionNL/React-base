@@ -19,58 +19,50 @@ Conventions are decided (see design.md "Resolved Questions"); discovery is now s
 
 ## 2. Repo skeleton — no cluster impact
 
-- [ ] 2.1 Create directory tree under `react-base/`:
-  - `react-platform/{argo,platform,values,scripts,docs}/`
-  - `react-platform/values/{env,tenants,templates}/`
-  - `react-platform/platform/policies/`
-  - `charts/`
-- [ ] 2.2 Vendor the chart: copy `woo-website-template-apiv2/helm/woo-website/` (refactor branch, current commit) to `react-base/charts/woo-website/`. Verify `helm template ./charts/woo-website` renders cleanly. Record the upstream commit hash in `charts/woo-website/UPSTREAM` so future bumps are traceable.
-- [ ] 2.3 Write `react-base/CLAUDE.md`. Mirror Nextcloud-base structure (project overview, common commands, architecture, sync windows, adding-a-tenant). Strip every reference to DB / Redis / PgBouncer / ESO / S3 / RWX storage. Add a "Co-tenancy with Nextcloud" section explaining the shared-namespace model.
-- [ ] 2.4 Write `react-base/README.md` (Dutch, same tone as Nextcloud-base; emphasise "2-line tenant" simplicity).
-- [ ] 2.5 Initialise `react-base/CHANGELOG.md` with an entry for this scaffold (per global rule: user-owned project requires a changelog).
-- [ ] 2.6 Write `react-base/.gitignore`: at minimum `charts/*.tgz`, `**/.DS_Store`, `*.secret.yaml`, `secrets/`, `env.local`, `cluster-state.yaml` if it ends up containing anything sensitive.
+- [x] 2.1 Create directory tree under `react-base/`.
+- [x] 2.2 Vendor the chart at upstream commit `b1ac4e89` (refactor/platform-grade-cleanup branch). UPSTREAM file records sync point + react-base divergences (added `templates/networkpolicy.yaml`, added `networkPolicy` block in `values.yaml`).
+- [x] 2.3 `react-base/CLAUDE.md` written. Mirrors Nextcloud-base structure, strips DB/Redis/PgBouncer/ESO/storage, adds Co-tenancy with Nextcloud section.
+- [x] 2.4 `react-base/README.md` written (Dutch, mirrors Nextcloud-base tone, emphasises 2-line tenant).
+- [x] 2.5 `react-base/CHANGELOG.md` initialised with bootstrap entry.
+- [x] 2.6 `react-base/.gitignore` covers all required patterns plus `cluster-state.yaml`.
 
 ## 3. Values layering — encodes platform conventions
 
-- [ ] 3.1 `values/common.yaml`: chart version pin, image registry, `pwa.image.tag: <semver from task 1.3>` (never `latest`), `nodeSelector: {role: prod-nextcloud}`, `nextcloud-only` toleration, ingress `className: nginx`, `strategy: {type: Recreate}`, security context defaults from the chart, upstream base path `/apps/opencatalogi/api`, default theme classname, default `replicaCount`. **No domain or upstream host pattern here — those are env-specific.**
-- [ ] 3.2 `values/env/accept.yaml`: `domainSuffix: accept.openwoo.app`, `upstreamHostTemplate: <name>.accept.commonground.nu`, replicas, HPA off, accept-tier resources.
-- [ ] 3.3 `values/env/prod.yaml`: `domainSuffix: openwoo.app`, `upstreamHostTemplate: <name>.commonground.nu`, replicas, HPA on, prod-tier resources.
-- [ ] 3.4 `values/templates/tenant-template.yaml`: 2-line minimum (`tenant.name`, `tenant.environment`) with commented optional overrides for `branding.*`, `hostname`, `apiBaseUrl`, `wave`.
-- [ ] 3.5 Generate `values/tenants/tenant-<name>.yaml` per existing tenant by translating `cluster-state.yaml` (task 1.2): copy any `pwa.env.GATSBY_*` and `NL_DESIGN_THEME_CLASSNAME` into the tenant's `branding` map. Tenants whose live state matches the platform default produce a 2-line file.
+- [x] 3.1 `values/common.yaml` written. Image pinned to `1.0.0` (TODO: verify against GHCR — task 1.3). Discovery: today's `strategy: {type: Recreate}` is dead config (chart Deployment has no `strategy` block, silently ignored). Default RollingUpdate is preserved (better for static frontend). Includes `networkPolicy.{enabled,ingressNamespace}` toggle for chart-shipped policies. Domain logic is **not** here — moved to ApplicationSet template.
+- [x] 3.2 `values/env/accept.yaml` written (replicaCount: 1, autoscaling off).
+- [x] 3.3 `values/env/prod.yaml` written (replicaCount: 2, HPA enabled, modest limits bump).
+- [x] 3.4 `values/templates/tenant-template.yaml` written. 2-line minimum + commented `branding`, `wave`, `hostname`, `apiBaseUrl`, `env` overrides.
+- [ ] 3.5 Generate per-tenant files from `cluster-state.yaml` (depends on task 1.2 — deferred to live operations). Synthetic `tenant-test-mcc.yaml` added now as canary placeholder.
 
 ## 4. Argo CD — AppProject and ApplicationSet
 
-- [ ] 4.1 Write `argo/projects/react-platform.yaml` (AppProject). Mirror Nextcloud-base AppProject:
+- [x] 4.1 Write `argo/projects/react-platform.yaml` (AppProject). Mirror Nextcloud-base AppProject:
   - `sourceRepos`: this repo
   - `destinations`: `namespace: '*-accept'` and `namespace: '*-prod'` on the single cluster server (matches Nextcloud-base destinations exactly, since namespaces are shared)
   - sync windows: Mon–Thu 17:00–07:00 Europe/Amsterdam — *deny* outside the window for any change touching `values/common.yaml`, `values/env/*.yaml`, `argo/`, `platform/`, `charts/`. *Allow* anytime for changes scoped to `values/tenants/`.
-- [ ] 4.2 Write `argo/applicationsets/react-tenants.yaml`. Generator: git directory match on `values/tenants/tenant-*.yaml`. Template:
-  - `metadata.name: {{ .tenant.name }}-{{ .tenant.environment }}-reactfront`
-  - `spec.destination.namespace: {{ .tenant.name }}-{{ .tenant.environment }}` (paired with Nextcloud namespace — see design.md Decision 3)
-  - `spec.destination.server`: the single in-cluster server
-  - `spec.source.path: charts/woo-website`
-  - `spec.source.helm.parameters`: derived `global.domain`, `pwa.upstream.base`, `pwa.upstream.host` from env templates
-  - `spec.source.helm.valueFiles`: `[../../values/common.yaml, ../../values/env/{{ .tenant.environment }}.yaml]` plus inline `values:` for tenant branding
-- [ ] 4.3 Verify with `helm template` + `kubeconform`: each scaffolded tenant renders cleanly. Diff the rendered manifest against `cluster-state.yaml` for that tenant; the only expected delta is `metadata.namespace` (old `<name>` → new `<name>-<env>`).
+- [x] 4.2 Write `argo/applicationsets/react-tenants.yaml`. Used multi-source pattern (chart source + values ref source) mirroring Nextcloud-base. Inline `values:` block computes hostname / upstream / TLS secret / commonLabels / branding env vars from `.tenant.environment` switch and `.tenant.branding` map. `goTemplateOptions: ["missingkey=default"]` keeps minimal tenants working.
+- [x] 4.3 Verified with `helm template` + `kubeconform`: synthetic tenant `test-mcc-accept` renders 9 resources, all schema-valid. Inline-values logic verified against the ApplicationSet template (smoke-checks.sh reproduces it in bash).
 
 ## 5. Platform policies — pod-label-scoped, not namespace-label-scoped
 
-- [ ] 5.1 `platform/policies/networkpolicy-react-default-deny.yaml`: deny all ingress and egress for pods labeled `app.kubernetes.io/part-of: react-platform`. **Selects pods, not namespaces** — leaves Nextcloud co-tenant traffic untouched.
-- [ ] 5.2 `platform/policies/networkpolicy-react-allow-ingress-controller.yaml`: allow ingress from the ingress-nginx namespace to react pods.
-- [ ] 5.3 `platform/policies/networkpolicy-react-allow-egress-public-api.yaml`: allow react pods egress to DNS + the public-internet routable IP for the upstream API hosts. The upstream is *not* the in-cluster Nextcloud pod — the PWA hits the public hostname via ingress, so egress is "anywhere on TCP/443". If we ever switch to in-cluster API access, this rule needs revisiting.
-- [ ] 5.4 Verify on canary cut-over (task 8) that the Nextcloud pod in the same namespace shows zero connectivity regression.
+**Approach changed**: rather than standalone YAMLs in `platform/policies/`, NetworkPolicies are templated **in the vendored chart** at `charts/woo-website/templates/networkpolicy.yaml`. They ship per-release and get cleaned up on uninstall. The `platform/policies/` directory carries a README explaining where the policies actually live. Recorded as a divergence from upstream in `charts/woo-website/UPSTREAM`.
+
+- [x] 5.1 default-deny policy templated in chart. Selects pods by `app.kubernetes.io/part-of: react-platform`.
+- [x] 5.2 allow-ingress policy: from `networkPolicy.ingressNamespace` (default `ingress-nginx`) to pod port 8080.
+- [x] 5.3 allow-egress policy: DNS to `kube-system` + HTTPS (443) to public IPs (RFC1918 ranges blocked to prevent in-cluster lateral movement).
+- [ ] 5.4 Verify Nextcloud co-tenant unaffected — deferred to canary cut-over (task 8).
 
 ## 6. Scripts
 
-- [ ] 6.1 `scripts/validate-values.sh`: required fields per tenant file (`tenant.name`, `tenant.environment` ∈ {accept, prod}). Mirror Nextcloud-base shape minus DB/secret checks.
-- [ ] 6.2 `scripts/smoke-checks.sh`: `helm template` every tenant against the chart, pipe through `kubeconform` for schema check. No cluster connection required.
-- [ ] 6.3 GitHub Actions workflow `.github/workflows/validate.yaml`: yamllint + smoke-checks + values-validate + gitleaks. Mirror Nextcloud-base validate.yaml minus DB-specific jobs.
+- [x] 6.1 `scripts/validate-values.sh` written. Required fields, env enum, filename convention.
+- [x] 6.2 `scripts/smoke-checks.sh` written. Reproduces ApplicationSet inline-values in bash for offline render testing. Verified: 9 resources render clean for synthetic test tenant.
+- [ ] 6.3 GitHub Actions workflow — deferred (one cycle of local validation first).
 
 ## 7. Docs
 
-- [ ] 7.1 `docs/ADDING-TENANT.md`: copy template, edit name + env, commit, push. ApplicationSet auto-detects. Include the namespace-pairing rule (frontend lands in same namespace as Nextcloud co-tenant; that namespace must already exist). State explicitly that **DNS is automatic** — `cluster-infra/external-dns` creates the Cloudflare record from the tenant's Ingress hostname; the operator does not touch Cloudflare. Same for TLS (cert-manager via HTTP-01).
-- [ ] 7.2 `docs/ROLLOUTS.md`: sync windows, wave 0 → 1 → 2 → 3 procedure, image-tag bump procedure (platform change → 17:00 window), rollback (revert PR).
-- [ ] 7.3 `docs/MIGRATION.md`: per-tenant cut-over runbook from "namespace `<name>`" to "namespace `<name>-<env>`". Lifted from design.md Migration Plan plus concrete `kubectl` commands.
+- [x] 7.1 `react-platform/docs/ADDING-TENANT.md` written (Dutch). Includes namespace-pairing rule and explicit "DNS/TLS are automatic" callout.
+- [x] 7.2 `react-platform/docs/ROLLOUTS.md` written (Dutch). Sync windows, image-bump procedure, wave order, rollback.
+- [x] 7.3 `react-platform/docs/MIGRATION.md` written (Dutch). Per-tenant cut-over with concrete `kubectl` commands.
 
 ## 8. Canary cut-over — single tenant, in the sync window
 
