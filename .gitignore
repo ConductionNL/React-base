@@ -1,0 +1,29 @@
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Helm artifacts
+charts/*.tgz
+charts/**/charts/
+
+# Secrets — never commit, per global policy
+*.secret.yaml
+*.secret.yml
+*.pem
+*.key
+*_rsa
+*.crt
+*.p12
+secrets/
+env.local
+.env
+.env.*
+
+# Discovery output (live cluster snapshots — see openspec task 1.2)
+openspec/**/cluster-state.yaml
+
+# Local tool caches
+.kubeconform-cache/
