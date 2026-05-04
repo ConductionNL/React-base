@@ -1,0 +1,129 @@
+---
+# common.yaml — base config for every WOO PWA tenant in every environment.
+# Tenant files extend this; environment files (env/*.yaml) override env-specific
+# bits. Anything in here applies to all tenants on every cluster.
+#
+# Convention: never put hostname or upstream-host patterns in here — those are
+# environment-specific (env/*.yaml) or computed by the ApplicationSet template.
+
+# ---------- Image ----------
+# Image tag is pinned at the platform level (NEVER `latest`). Bumping the tag
+# is a platform-wide change en valt onder de AppProject sync window
+# (see argo/projects/react-platform.yaml).
+#
+# Huidige pin: `development-V1.0.260422` — versie die we via de canary
+# tenants testen. Digest:
+#   sha256:fb21855fd19fea835109c35237483c513f4fe417ed93e9b8b80e5e3d58e70ceb
+#
+# BELANGRIJK voor migratie van bestaande toolchain-tenants:
+# Per-tenant override `pwa.image.tag: latest` zetten tijdens cut-over,
+# zodat de tenant geen image-versie wisselt tegelijk met de namespace-move.
+# Pas in een aparte sync window verwijder je de override om naar de
+# platform-default te upgraden. Zie project memory en MIGRATION.md.
+pwa:
+  image:
+    image: ghcr.io/conductionnl/woo-website-v2
+    pullPolicy: IfNotPresent
+    tag: "development-V1.0.260422"
+
+# ---------- Pod placement ----------
+# Frontends co-locate on the Nextcloud nodepool (status quo from
+# create_react.sh). A future openspec change can move them off; until then
+# this is platform default.
+nodeSelector:
+  role: prod-nextcloud
+
+tolerations:
+  - key: nextcloud-only
+    operator: Equal
+    value: "true"
+    effect: NoSchedule
+
+# ---------- Service ----------
+# Chart Service maps to container port 8080 (nginx in pwa/Dockerfile).
+service:
+  type: ClusterIP
+  port: 80
+
+# ---------- Ingress ----------
+# Ingress class is cluster-wide (ingress-nginx). Hostname and TLS secret are
+# computed per-tenant by the ApplicationSet template.
+# DNS records are auto-managed by cluster-infra/external-dns based on the
+# Ingress hostname — no Cloudflare action when adding/removing tenants.
+ingress:
+  enabled: true
+  className: nginx
+  pathType: ImplementationSpecific
+
+# ---------- Gateway ----------
+# Chart-internal flag. Keep on (matches today's manifests).
+gateway:
+  enabled: true
+
+# ---------- Service account ----------
+# Dedicated SA per release (least-privilege, no default-SA hijack).
+serviceAccount:
+  create: true
+
+# ---------- Security ----------
+# Pod-level: non-root, seccomp default, fsGroup matches runAsGroup so mount
+# permissions line up. Values match the chart's platform-grade defaults but
+# are pinned here so a chart-default change doesn't silently relax security.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 101    # nginx UID in nginx:alpine
+  runAsGroup: 101
+  fsGroup: 101
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container-level: drop all caps, no privilege escalation. readOnlyRootFilesystem
+# stays off until 30-generate-runtime.sh writes to a tmpfs instead of image-fs
+# (see chart pwa/Dockerfile).
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 101
+  runAsGroup: 101
+  capabilities:
+    drop:
+      - ALL
+
+# ---------- Probes ----------
+# Pinned (chart defaults are sane for static nginx).
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 30
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 2
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# ---------- Resources (platform default) ----------
+# Static nginx → tiny baseline. env/*.yaml can override for prod-tier.
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+# ---------- NetworkPolicies ----------
+# Policies live in the vendored chart at templates/networkpolicy.yaml.
+# Pod-label scoped (`app.kubernetes.io/part-of: react-platform`) to coexist
+# with Nextcloud co-tenant policies in the same namespace.
+networkPolicy:
+  enabled: true
+  ingressNamespace: ingress-nginx

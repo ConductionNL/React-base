@@ -1,0 +1,12 @@
+---
+# env/accept.yaml — overrides for the "accept" environment.
+# Hostname/upstream pattern is computed by the ApplicationSet template
+# from tenant.environment, not from this file.
+
+replicaCount: 1
+
+autoscaling:
+  enabled: false
+
+# Accept-tier resources: same as common.yaml defaults.
+# Override here only if accept needs to differ from prod-tier baseline.
