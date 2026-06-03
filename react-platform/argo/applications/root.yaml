@@ -24,7 +24,7 @@ spec:
   project: default
 
   source:
-    repoURL: https://github.com/ConductionNL/React-base.git
+    repoURL: https://codeberg.org/Conduction/React-base.git
     # TODO(post-canary): zet terug naar `HEAD` na merge feat → development → main.
     # Tijdens de eerste live test pulled Argo direct van de feature branch
     # zodat we niet hoeven te wachten op PR-merge cycles.

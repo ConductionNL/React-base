@@ -23,7 +23,7 @@ spec:
 
   generators:
     - git:
-        repoURL: "https://github.com/ConductionNL/React-base.git"
+        repoURL: "https://codeberg.org/Conduction/React-base.git"
         # TODO(post-canary): zet terug naar `HEAD` zodra feat/bootstrap-react-platform naar
         # main is gemerged. Voor de eerste live test (canary.openwoo.app)
         # wijst de generator én de tenant-source naar feat/bootstrap-react-platform.
@@ -50,7 +50,7 @@ spec:
 
       sources:
         # Vendored woo-website chart in this repo.
-        - repoURL: "https://github.com/ConductionNL/React-base.git"
+        - repoURL: "https://codeberg.org/Conduction/React-base.git"
           # TODO(post-canary): zet terug naar `HEAD` na merge feat/bootstrap-react-platform → main.
           targetRevision: feat/bootstrap-react-platform
           path: charts/woo-website
@@ -132,7 +132,7 @@ spec:
                       - "{{ $host }}"
 
         # Values repo (this repo) — anchors $values references above.
-        - repoURL: "https://github.com/ConductionNL/React-base.git"
+        - repoURL: "https://codeberg.org/Conduction/React-base.git"
           # TODO(post-canary): zet terug naar `HEAD` na merge feat/bootstrap-react-platform → main.
           targetRevision: feat/bootstrap-react-platform
           ref: values

@@ -18,8 +18,8 @@ spec:
   description: "Multi-tenant WOO PWA (React/Gatsby) platform managed by GitOps"
 
   sourceRepos:
-    - "git@github.com:ConductionNL/React-base.git"
-    - "https://github.com/ConductionNL/React-base.git"
+    - "git@codeberg.org:Conduction/React-base.git"
+    - "https://codeberg.org/Conduction/React-base.git"
     - "https://github.com/conductionnl/React-base.git"
 
   # Destinations match Nextcloud-base exactly (namespaces are shared with
