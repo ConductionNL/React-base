@@ -36,8 +36,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     the 44 legacy Helm-toolchain frontends (`default` project) per
     `docs/MIGRATION.md`; opt-out *exclusion* mechanism for `enabled:false` tenants
     (a git-files generator cannot skip on a nested field — candidate: a
-    `frontend.enabled` gate inside the woo-website chart). Both TODOs flip the
-    `targetRevision` from this branch back to `HEAD` after merge to main.
+    `frontend.enabled` gate inside the woo-website chart).
+  - Merged onto `main` (trunk-based, no PR); `targetRevision` set to `HEAD` for
+    the React-base chart/values sources (generator already tracks Nextcloud-base
+    `HEAD`). Canary gating is the generator glob, independent of the revision.
 - **chore(argo): migrate source GitHub → Codeberg.** GitHub org `ConductionNL`
   is shadowbanned (`react-platform` + canary reactfront apps `SYNC=Unknown`).
   Repointed `repoURL` `github.com/ConductionNL/React-base` →

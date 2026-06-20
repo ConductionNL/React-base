@@ -67,11 +67,10 @@ spec:
       sources:
         # Vendored woo-website chart in this repo (React-base).
         - repoURL: "https://codeberg.org/Conduction/React-base.git"
-          # TODO(post-merge): zet terug naar `HEAD` na merge
-          # feat/nc-base-as-tenant-source → main. Voor de canary-test wijst de
-          # chart-/values-source naar deze branch; de generator (Nextcloud-base)
-          # staat al op HEAD.
-          targetRevision: feat/nc-base-as-tenant-source
+          # On main: chart-/values-source tracks HEAD; the generator
+          # (Nextcloud-base) also tracks HEAD. Canary gating is the generator
+          # glob (tenant-canary-*.yaml), not the revision.
+          targetRevision: HEAD
           path: charts/woo-website
           helm:
             releaseName: "woo-website"
@@ -161,8 +160,7 @@ spec:
 
         # Values repo (this repo, React-base) — anchors $values references above.
         - repoURL: "https://codeberg.org/Conduction/React-base.git"
-          # TODO(post-merge): zet terug naar `HEAD` na merge feat/nc-base-as-tenant-source → main.
-          targetRevision: feat/nc-base-as-tenant-source
+          targetRevision: HEAD
           ref: values
 
       destination:
