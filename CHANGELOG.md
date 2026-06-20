@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
+- **2026-06-20 — fix(argo): point the react-platform app-of-apps at HEAD (main).**
+  `react-platform/argo/applications/root.yaml` `targetRevision`
+  `feat/bootstrap-react-platform` → `HEAD`. The live `react-platform` app drives
+  the whole `argo/` dir (AppProject + `react-tenants` appset + root itself) and
+  self-heals, so manual `kubectl apply` of the appset was reverted to the old
+  branch. Cutover needs a ONE-TIME live patch of the app's `targetRevision`
+  (app-of-apps reads its own revision from the old branch); after that it's pure
+  GitOps on main.
 - **2026-06-20 — feat(argo): roll out conduction test/demo frontends + upstream-follows-backend rule.**
   - Added `tenant-conduction-*.yaml` to the generator glob → new WOO frontends
     for `conduction-test` and `conduction-demo` (no legacy app to cut over).

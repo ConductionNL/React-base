@@ -25,10 +25,11 @@ spec:
 
   source:
     repoURL: https://codeberg.org/Conduction/React-base.git
-    # TODO(post-canary): zet terug naar `HEAD` na merge feat → development → main.
-    # Tijdens de eerste live test pulled Argo direct van de feature branch
-    # zodat we niet hoeven te wachten op PR-merge cycles.
-    targetRevision: feat/bootstrap-react-platform
+    # On main: the app-of-apps tracks HEAD (default branch). NB — moving to a
+    # new revision needs a ONE-TIME live patch of this Application's
+    # targetRevision, because it reads its own revision from the old one
+    # (classic app-of-apps bootstrap). After that it self-heals on main.
+    targetRevision: HEAD
     # Recursief alles in argo/ syncen: projects/, applicationsets/, en
     # applications/root.yaml zelf (self-management). Argo handelt circulaire
     # self-references netjes af.
