@@ -7,6 +7,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
+- **2026-06-20 — feat(argo): Nextcloud-base becomes the single source of truth for tenants ("Argo ís de watcher").**
+  Branch `feat/nc-base-as-tenant-source`. The `react-tenants` ApplicationSet git
+  generator now reads `nextcloud-platform/values/tenants/tenant-*.yaml` from
+  `codeberg.org/conduction/Nextcloud-base.git` instead of this repo's own
+  `values/tenants/`. Adding a Nextcloud tenant auto-creates its co-tenant WOO
+  frontend; the frontend fleet is a pure function of the Nextcloud tenant fleet
+  (zero drift, no bespoke watcher process). This repo no longer holds per-tenant
+  files — removed `values/tenants/tenant-canary-{accept,prod}.yaml` and
+  `values/templates/tenant-template.yaml`; added `values/tenants/README.md`.
+  - **Schema:** per-tenant frontend config lives in an optional `tenant.frontend:`
+    block in the Nextcloud tenant file (`enabled`, `tag`, `host`, `branding`,
+    `env`). Opt-out model: absent block → frontend created with platform defaults.
+    `tag` is the per-tenant image pin (the "iffy tags" escape hatch for migration).
+  - **Derivation:** Nextcloud `tenant.name` already encodes the environment
+    (`almere-accept`), so it maps 1:1 to the namespace and the
+    `<name>-reactfront` Application name (== legacy `mcc create-react` output);
+    the bare org (`almere`) is stripped via `trimSuffix` for the public hostname only.
+  - **Gating:** generator glob is canary-only (`tenant-canary-*.yaml`) for this
+    phase — flipping the live appset to this branch touches ONLY canary, an
+    apples-to-apples test (canary render is identical to the old source).
+  - Added `Nextcloud-base.git` to AppProject `react-platform` `sourceRepos`.
+  - Updated `scripts/{smoke-checks,validate-values}.sh`: read the Nextcloud-base
+    tenant dir (`TENANTS_DIR`/`TENANT_GLOB` overridable), new derivation, drop the
+    tenant file from helm `-f` (the appset no longer passes it), validate the
+    `frontend:` block.
+  - **Deferred to Fase 2:** widen glob to the full fleet + stage the cut-over of
+    the 44 legacy Helm-toolchain frontends (`default` project) per
+    `docs/MIGRATION.md`; opt-out *exclusion* mechanism for `enabled:false` tenants
+    (a git-files generator cannot skip on a nested field — candidate: a
+    `frontend.enabled` gate inside the woo-website chart). Both TODOs flip the
+    `targetRevision` from this branch back to `HEAD` after merge to main.
 - **chore(argo): migrate source GitHub → Codeberg.** GitHub org `ConductionNL`
   is shadowbanned (`react-platform` + canary reactfront apps `SYNC=Unknown`).
   Repointed `repoURL` `github.com/ConductionNL/React-base` →

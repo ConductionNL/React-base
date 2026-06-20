@@ -21,6 +21,10 @@ spec:
     - "git@codeberg.org:Conduction/React-base.git"
     - "https://codeberg.org/Conduction/React-base.git"
     - "https://github.com/conductionnl/React-base.git"
+    # Source of truth for tenant files — the react-tenants generator reads
+    # Nextcloud-base's tenant directory ("Argo ís de watcher"). Lowercase
+    # `conduction` matches the URL the Nextcloud appset is registered with.
+    - "https://codeberg.org/conduction/Nextcloud-base.git"
 
   # Destinations match Nextcloud-base exactly (namespaces are shared with
   # Nextcloud co-tenants — see openspec/changes/bootstrap-react-platform/
