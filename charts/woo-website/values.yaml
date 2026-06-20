@@ -1,0 +1,132 @@
+# Default values for woo-website chart.
+# Platform-grade hardening — zie CHANGELOG voor breaking-change-overwegingen.
+
+pwa:
+  image:
+    # NB: oorspronkelijke key is `image.image` (niet de standaard `image.repository`).
+    # Behouden voor backward compat met bestaande deployments.
+    image: "ghcr.io/conductionnl/woo-website-v2"
+    pullPolicy: IfNotPresent
+    # `latest` is drift-bron — pin op platform-niveau (bv. in react-base
+    # values/common.yaml) of override per tenant. Default blijft `latest`
+    # zodat bestaande Application-YAMLs blijven werken tot ze migreren.
+    tag: "latest"
+  upstream:
+    host: ""
+    base: ""
+  # Reserved voor toekomstige runtime-config (theming via ConfigMap i.p.v.
+  # build-time GATSBY_* args). Op dit moment ongebruikt; zie config-runtime.yaml.
+  runtime: {}
+  # Free-form env-vars naar de pod. Gebruikt door 30-generate-runtime.sh
+  # (NL_DESIGN_THEME_CLASSNAME, GATSBY_FAVICON_URL, etc.).
+  env: {}
+
+replicaCount: 2
+
+global:
+  domain: woo.commonground.nu
+  tls: true
+
+gateway:
+  enabled: true
+  # Trusted proxies: vul met internal LB-IP als achter HTTPS-only LB
+  # config:
+  #   trustedProxies: []
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Dedicated SA per release — least-privilege, geen default-SA hergebruik.
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+# Pod-niveau security: non-root, seccomp default profile.
+# fsGroup matched runAsGroup zodat mount-permissies kloppen.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 101    # nginx uid in nginx:alpine
+  runAsGroup: 101
+  fsGroup: 101
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container-niveau security: drop alle caps, geen privilege escalatie.
+# readOnlyRootFilesystem staat UIT omdat 30-generate-runtime.sh runtime.json
+# schrijft naar /usr/share/nginx/html (= image-fs). Future fix: entrypoint
+# laten schrijven naar /var/cache/runtime + nginx-config aanpassen.
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 101
+  runAsGroup: 101
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  path: ""
+  pathType: ImplementationSpecific
+  className: nginx
+  annotations: {}
+  hosts:
+  tls: []
+
+# Static-site nginx → laag baseline-verbruik, room voor traffic-spikes.
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+# Probes — explicit i.p.v. K8s defaults.
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 30
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 2
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# NetworkPolicies — added by react-base (not in upstream chart). See
+# templates/networkpolicy.yaml. Toggle off for testing or environments
+# without NetworkPolicy support.
+networkPolicy:
+  enabled: true
+  # Namespace where the ingress controller lives — used by the
+  # allow-ingress policy. Override if your cluster runs ingress-nginx
+  # in a non-standard namespace.
+  ingressNamespace: ingress-nginx

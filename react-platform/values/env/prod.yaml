@@ -1,0 +1,22 @@
+---
+# env/prod.yaml — overrides for the "prod" environment.
+# Hostname/upstream pattern is computed by the ApplicationSet template
+# from tenant.environment, not from this file.
+
+replicaCount: 2
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+
+# Prod-tier resources: small bump on limits to absorb traffic spikes.
+# Static nginx → still tiny.
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 1000m
+    memory: 512Mi

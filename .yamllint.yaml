@@ -1,0 +1,21 @@
+---
+# yamllint config voor react-base.
+# Helm-templates worden niet als pure YAML behandeld (bevatten go-templates) —
+# daarom skipped in `ignore`. GitHub Actions workflows gebruiken `on:` als
+# top-level key wat yamllint's truthy-check triggert; schakelen we uit.
+
+extends: default
+
+ignore: |
+  charts/
+
+rules:
+  line-length:
+    max: 200
+    level: warning
+  comments-indentation: disable
+  document-start: enable
+  truthy:
+    check-keys: false
+  indentation:
+    indent-sequences: consistent

@@ -1,0 +1,199 @@
+---
+# ApplicationSet that generates one Argo CD Application per Nextcloud tenant.
+#
+# SOURCE OF TRUTH: Nextcloud-base's `nextcloud-platform/values/tenants/`.
+# This platform owns no per-tenant files — "Argo ís de watcher": the git
+# generator below watches the Nextcloud-base tenant directory and materialises
+# one WOO PWA frontend per tenant. Adding a Nextcloud tenant => Argo creates
+# the co-tenant frontend automatically. Zero drift (the frontend fleet is a
+# pure function of the Nextcloud tenant fleet), no bespoke sync process.
+#
+# Per-tenant frontend config (image tag, branding, enable/disable, host
+# override) lives in an OPTIONAL `tenant.frontend:` block in the Nextcloud
+# tenant file. Absent block => default behaviour (opt-out model).
+#
+# Nextcloud `tenant.name` already encodes the environment (e.g. `almere-accept`),
+# so it maps 1:1 to the namespace and the `<name>-reactfront` Application name.
+# The bare org (`almere`) is derived for the public hostname only.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: react-tenants
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/compare-options: IgnoreExtraneous
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=default"]
+
+  # Don't auto-delete tenant Applications when their tenant-*.yaml is removed
+  # (manual cleanup forces operator review).
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+
+  generators:
+    - git:
+        # Source of truth = Nextcloud-base (lowercase `conduction` — Argo
+        # matches repo URLs exactly; this is the URL the Nextcloud appset uses).
+        repoURL: "https://codeberg.org/conduction/Nextcloud-base.git"
+        revision: HEAD
+        files:
+          # FASE 1 (bedrading + canary): canary-only glob so flipping the live
+          # appset to this branch touches ONLY canary — an apples-to-apples test
+          # of the new source (canary render is byte-identical to the old one).
+          # FASE 2: widen to `tenant-*.yaml` per the staged migration in
+          # react-platform/docs/MIGRATION.md (collides with the 44 legacy Helm
+          # apps by name, so roll per wave, not big-bang).
+          - path: "nextcloud-platform/values/tenants/tenant-canary-*.yaml"
+
+  template:
+    metadata:
+      # Application name == Nextcloud tenant name + "-reactfront", which equals
+      # today's create_react.sh / mcc output exactly (e.g. almere-accept-reactfront)
+      # so cut-over per tenant is "delete old, ApplicationSet creates same name".
+      name: "{{ .tenant.name }}-reactfront"
+      namespace: argocd
+      labels:
+        app.kubernetes.io/part-of: react-platform
+        react.platform/tenant: "{{ .tenant.name }}"
+        react.platform/environment: "{{ .tenant.environment }}"
+      annotations:
+        argocd.argoproj.io/sync-wave: "{{ default \"1\" .tenant.wave }}"
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: react-platform
+
+      sources:
+        # Vendored woo-website chart in this repo (React-base).
+        - repoURL: "https://codeberg.org/Conduction/React-base.git"
+          # TODO(post-merge): zet terug naar `HEAD` na merge
+          # feat/nc-base-as-tenant-source → main. Voor de canary-test wijst de
+          # chart-/values-source naar deze branch; de generator (Nextcloud-base)
+          # staat al op HEAD.
+          targetRevision: feat/nc-base-as-tenant-source
+          path: charts/woo-website
+          helm:
+            releaseName: "woo-website"
+            valueFiles:
+              - "$values/react-platform/values/common.yaml"
+              - "$values/react-platform/values/env/{{ .tenant.environment }}.yaml"
+            # Inline values: derived hostname, upstream URL, TLS secret name,
+            # image-tag override, branding env, common labels for NetworkPolicy.
+            values: |
+              {{- $ncname := .tenant.name -}}
+              {{- $env := .tenant.environment -}}
+              {{- /* Nextcloud name encodes env (almere-accept); strip it for the public org host. */ -}}
+              {{- $org := trimSuffix (printf "-%s" $env) $ncname -}}
+              {{- $fe := default (dict) .tenant.frontend -}}
+              {{- $branding := default (dict) (index $fe "branding") -}}
+              {{- $extraEnv := default (dict) (index $fe "env") -}}
+              {{- $tag := index $fe "tag" -}}
+              {{- $domainSuffix := "" -}}
+              {{- $upstreamSuffix := "" -}}
+              {{- if eq $env "prod" -}}
+              {{- $domainSuffix = "openwoo.app" -}}
+              {{- $upstreamSuffix = "commonground.nu" -}}
+              {{- else -}}
+              {{- $domainSuffix = printf "%s.openwoo.app" $env -}}
+              {{- $upstreamSuffix = printf "%s.commonground.nu" $env -}}
+              {{- end -}}
+              {{- $computedHost := printf "%s.%s" $org $domainSuffix -}}
+              {{- $host := default $computedHost (index $fe "host") -}}
+              {{- $upstreamHost := printf "%s.%s" $org $upstreamSuffix -}}
+              {{- $upstreamBase := printf "https://%s/apps/opencatalogi/api" $upstreamHost -}}
+              {{- $apiBase := default $upstreamBase (index $fe "apiBaseUrl") -}}
+              commonLabels:
+                app.kubernetes.io/part-of: react-platform
+                react.platform/tenant: "{{ $ncname }}"
+                react.platform/environment: "{{ $env }}"
+              global:
+                domain: "{{ $host }}"
+                # tls: false — anders maakt de chart een eigen extra
+                # TLS-block + cert (`woo-website-frontend-tls`) bovenop
+                # onze `ingress.tls` met de `<name>-tls` convention.
+                # Resultaat: 2 certs, dubbele issuance bij Let's Encrypt.
+                # Wij leveren cert-manager.io/cluster-issuer zelf via
+                # ingress.annotations hieronder.
+                tls: false
+              pwa:
+                {{- with $tag }}
+                # Per-tenant image-pin (tenant.frontend.tag). Lost de "iffy tags"
+                # tijdens migratie op: migreer op de huidige tag, bump later bewust.
+                image:
+                  tag: "{{ . }}"
+                {{- end }}
+                upstream:
+                  host: "{{ $upstreamHost }}"
+                  base: "{{ $apiBase }}"
+                env:
+                  {{- with index $branding "organisationName" }}
+                  GATSBY_ORGANISATION_NAME: "{{ . }}"
+                  {{- end }}
+                  {{- with index $branding "themeClassname" }}
+                  NL_DESIGN_THEME_CLASSNAME: "{{ . }}"
+                  {{- end }}
+                  {{- with index $branding "jumbotronImageUrl" }}
+                  GATSBY_JUMBOTRON_IMAGE_URL: "{{ . }}"
+                  {{- end }}
+                  {{- with index $branding "faviconUrl" }}
+                  GATSBY_FAVICON_URL: "{{ . }}"
+                  {{- end }}
+                  {{- if index $branding "footerHideLogo" }}
+                  GATSBY_FOOTER_HIDE_LOGO: "{{ index $branding "footerHideLogo" }}"
+                  {{- end }}
+                  {{- range $k, $v := $extraEnv }}
+                  {{ $k }}: "{{ $v }}"
+                  {{- end }}
+              ingress:
+                annotations:
+                  # cert-manager normaal toegevoegd door chart als global.tls=true.
+                  # Wij zetten global.tls=false (zie boven), dus expliciet hier.
+                  cert-manager.io/cluster-issuer: letsencrypt-prod
+                # Geen `hosts:` block — de chart maakt al een rule op
+                # `global.domain`, dus een tweede via `ingress.hosts` levert
+                # een duplicate rule (zichtbaar als `host,host` in
+                # `kubectl get ingress`).
+                tls:
+                  - secretName: "{{ $ncname }}-tls"
+                    hosts:
+                      - "{{ $host }}"
+
+        # Values repo (this repo, React-base) — anchors $values references above.
+        - repoURL: "https://codeberg.org/Conduction/React-base.git"
+          # TODO(post-merge): zet terug naar `HEAD` na merge feat/nc-base-as-tenant-source → main.
+          targetRevision: feat/nc-base-as-tenant-source
+          ref: values
+
+      destination:
+        server: https://kubernetes.default.svc
+        # Co-tenant namespace == the Nextcloud namespace (== tenant.name, e.g.
+        # almere-accept). Created by the Nextcloud-base ApplicationSet; must exist.
+        namespace: "{{ .tenant.name }}"
+
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+          allowEmpty: false
+        syncOptions:
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+
+      revisionHistoryLimit: 10
+
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas
+        - group: autoscaling
+          kind: HorizontalPodAutoscaler
+          jsonPointers:
+            - /status

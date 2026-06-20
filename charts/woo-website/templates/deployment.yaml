@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "api-platform.fullname" . }}
+  labels:
+    {{- include "api-platform.labelsPWA" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "api-platform.selectorLabelsPWA" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "api-platform.selectorLabelsPWA" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "api-platform.serviceAccountName" . }}
+      {{- end }}
+      automountServiceAccountToken: false
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      volumes:
+          - name: tmpfs
+            emptyDir: {}
+          - name: tmpfs2
+            emptyDir: {}
+
+      containers:
+        - name: {{ .Chart.Name }}-pwa
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.pwa.image.image }}:{{ .Values.pwa.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.pwa.image.pullPolicy }}
+          volumeMounts:
+              -   mountPath: /var/cache/nginx/client_temp
+                  name: tmpfs
+              -   mountPath: /var/run
+                  name: tmpfs2
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: UPSTREAM_HOST
+              value: {{ .Values.pwa.upstream.host | quote }}
+            - name: UPSTREAM_BASE
+              value: {{ .Values.pwa.upstream.base | quote }}
+            {{- if .Values.pwa.env }}
+            {{- range $k, $v := .Values.pwa.env }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+            {{- end }}
+            {{- end }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
