@@ -38,13 +38,16 @@ spec:
         repoURL: "https://codeberg.org/conduction/Nextcloud-base.git"
         revision: HEAD
         files:
-          # FASE 1 (bedrading + canary): canary-only glob so flipping the live
-          # appset to this branch touches ONLY canary — an apples-to-apples test
-          # of the new source (canary render is byte-identical to the old one).
-          # FASE 2: widen to `tenant-*.yaml` per the staged migration in
-          # react-platform/docs/MIGRATION.md (collides with the 44 legacy Helm
-          # apps by name, so roll per wave, not big-bang).
+          # Staged rollout: one glob per onboarded set so each is an explicit,
+          # auditable inclusion (a git-files generator can't filter on a nested
+          # field, so the glob list IS the "which tenants have a live frontend"
+          # record). FASE 2 end state widens to `tenant-*.yaml`, but that
+          # collides by name with the 44 legacy Helm apps — so roll per set per
+          # react-platform/docs/MIGRATION.md, never big-bang.
           - path: "nextcloud-platform/values/tenants/tenant-canary-*.yaml"
+          # conduction test/demo (backend on test/demo.conduction.nl) — new
+          # frontends, no legacy app to cut over.
+          - path: "nextcloud-platform/values/tenants/tenant-conduction-*.yaml"
 
   template:
     metadata:
@@ -100,6 +103,9 @@ spec:
               {{- $computedHost := printf "%s.%s" $org $domainSuffix -}}
               {{- $host := default $computedHost (index $fe "host") -}}
               {{- $upstreamHost := printf "%s.%s" $org $upstreamSuffix -}}
+              {{- /* External-domain tenants declare tenant.hostname (the Nextcloud backend host); the frontend's upstream follows it so the two never drift. Explicit frontend.upstreamHost overrides both. */ -}}
+              {{- $upstreamHost = default $upstreamHost .tenant.hostname -}}
+              {{- $upstreamHost = default $upstreamHost (index $fe "upstreamHost") -}}
               {{- $upstreamBase := printf "https://%s/apps/opencatalogi/api" $upstreamHost -}}
               {{- $apiBase := default $upstreamBase (index $fe "apiBaseUrl") -}}
               commonLabels:

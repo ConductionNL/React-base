@@ -65,6 +65,15 @@ render_inline_values() {
     host="${org}.${env}.openwoo.app"
     upstream_host="${org}.${env}.commonground.nu"
   fi
+
+  # External-domain tenants declare tenant.hostname (the Nextcloud backend host);
+  # the frontend upstream follows it. frontend.upstreamHost overrides both.
+  local tenant_host fe_upstream
+  tenant_host="$(yq -r '.tenant.hostname // ""' "$f")"
+  fe_upstream="$(yq -r '.tenant.frontend.upstreamHost // ""' "$f")"
+  [[ -n "$tenant_host" ]] && upstream_host="$tenant_host"
+  [[ -n "$fe_upstream" ]] && upstream_host="$fe_upstream"
+
   upstream_base="https://${upstream_host}/apps/opencatalogi/api"
 
   # Optional overrides from the frontend block

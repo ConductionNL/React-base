@@ -7,6 +7,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
+- **2026-06-20 — feat(argo): roll out conduction test/demo frontends + upstream-follows-backend rule.**
+  - Added `tenant-conduction-*.yaml` to the generator glob → new WOO frontends
+    for `conduction-test` and `conduction-demo` (no legacy app to cut over).
+    Frontend hosts derive to `conduction-{test,demo}.accept.openwoo.app`
+    (auto DNS via external-dns + TLS via cert-manager); upstream points at the
+    real backend `test.conduction.nl` / `demo.conduction.nl`.
+  - **New rule:** the frontend upstream host now follows `tenant.hostname` when
+    set (external-domain tenants) so frontend and backend never drift; explicit
+    `tenant.frontend.upstreamHost` overrides both. Mirrored in `smoke-checks.sh`.
+    Only affects tenants with `tenant.hostname` in the glob (conduction); canary
+    (no `tenant.hostname`) is unchanged.
+  - Frontends use the platform-default woo-website image (no per-tenant pin);
+    pin via `tenant.frontend.tag` if needed. (The dev-tagged openwoo *backend*
+    apps are a separate concern — the frontend only calls their API.)
+  - Smoke-checks: both render clean (9 resources each, kubeconform valid).
 - **2026-06-20 — feat(argo): Nextcloud-base becomes the single source of truth for tenants ("Argo ís de watcher").**
   Branch `feat/nc-base-as-tenant-source`. The `react-tenants` ApplicationSet git
   generator now reads `nextcloud-platform/values/tenants/tenant-*.yaml` from
