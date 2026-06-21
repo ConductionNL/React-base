@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Changed
+- **2026-06-21 — fix(argo): allow `*-demo` namespaces in the react-platform AppProject.**
+  `conduction-demo` (namespace ends in `-demo`, a valid env suffix that maps to
+  accept) was rejected — the AppProject only listed `*-accept`/`*-test`/`*-prod`
+  destinations, so `conduction-demo-reactfront` failed with "destination ...
+  do not match any of the allowed destinations". Added `*-demo`.
 - **2026-06-20 — fix(argo): point the react-platform app-of-apps at HEAD (main).**
   `react-platform/argo/applications/root.yaml` `targetRevision`
   `feat/bootstrap-react-platform` → `HEAD`. The live `react-platform` app drives
