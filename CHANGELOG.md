@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **2026-06-22 — docs(openspec): `frontend-tls-and-migration` change proposal.**
+  Design for a per-tenant frontend TLS contract (`tenant.frontend.tls.{secretName,issuer}`,
+  written in Nextcloud-base, consumed by the `react-tenants` appset) so the 44 legacy
+  `*-reactfront` apps — many on own customer domains, some with bring-your-own certs —
+  can be migrated **one tenant at a time** without re-issuing or breaking TLS. Default
+  render stays byte-identical. Proposal/design/tasks only; no template change yet.
+  See `openspec/changes/frontend-tls-and-migration/`.
+
 ### Changed
 - **2026-06-21 — fix(argo): allow `*-demo` namespaces in the react-platform AppProject.**
   `conduction-demo` (namespace ends in `-demo`, a valid env suffix that maps to

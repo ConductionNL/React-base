@@ -1,0 +1,5 @@
+---
+schema: spec-driven
+created: 2026-06-22
+updated: 2026-06-22
+pivot: Add a per-tenant frontend TLS contract (custom secret + issuer toggle) so the 44 legacy reactfront apps — many on own customer domains, some with bring-your-own certs — can be migrated one-by-one to the ApplicationSet without re-issuing or breaking TLS.
