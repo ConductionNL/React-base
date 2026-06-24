@@ -15,6 +15,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   (`delft.accept.openwoo.app`) and `edam-volendam-accept-reactfront`
   (`edam-volendam.accept.openwoo.app`) in their existing co-tenant namespaces.
   Branding via `tenant.frontend.branding.organisationName` (set in Nextcloud-base).
+- **2026-06-24 — feat(argo): onboard `gooisemeren-migrate-prod` frontend (PROD).**
+  Added an explicit per-file glob for the live Gooise Meren prod backend tenant.
+  No live frontend existed yet — clean add, no cut-over/downtime. The tenant file
+  pins `frontend.host: gooisemeren.openwoo.app` (else the appset derives
+  `gooisemeren-migrate.openwoo.app` from the tenant name); upstream auto-follows
+  `tenant.hostname` (`gooisemeren.commonground.nu`). Materialises
+  `gooisemeren-migrate-prod-reactfront` in the `gooisemeren-migrate-prod` namespace.
 - **2026-06-22 — docs(openspec): `frontend-tls-and-migration` change proposal.**
   Design for a per-tenant frontend TLS contract (`tenant.frontend.tls.{secretName,issuer}`,
   written in Nextcloud-base, consumed by the `react-tenants` appset) so the 44 legacy

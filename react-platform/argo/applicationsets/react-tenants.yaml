@@ -52,6 +52,10 @@ spec:
           # in toolchain/ to cut over — clean adds). Onboarded 2026-06-24.
           - path: "nextcloud-platform/values/tenants/tenant-delft-accept.yaml"
           - path: "nextcloud-platform/values/tenants/tenant-edam-volendam-accept.yaml"
+          # Gooise Meren PROD — no live frontend yet (clean add, no cut-over).
+          # Backend tenant is gooisemeren-migrate-prod; its frontend.host pins the
+          # public host to gooisemeren.openwoo.app (else it derives -migrate).
+          - path: "nextcloud-platform/values/tenants/tenant-gooisemeren-migrate-prod.yaml"
 
   template:
     metadata:
