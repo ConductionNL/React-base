@@ -48,6 +48,10 @@ spec:
           # conduction test/demo (backend on test/demo.conduction.nl) — new
           # frontends, no legacy app to cut over.
           - path: "nextcloud-platform/values/tenants/tenant-conduction-*.yaml"
+          # Batch-onboarded accept tenants (new backends, no legacy frontend
+          # in toolchain/ to cut over — clean adds). Onboarded 2026-06-24.
+          - path: "nextcloud-platform/values/tenants/tenant-delft-accept.yaml"
+          - path: "nextcloud-platform/values/tenants/tenant-edam-volendam-accept.yaml"
 
   template:
     metadata:
