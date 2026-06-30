@@ -52,10 +52,14 @@ spec:
           # in toolchain/ to cut over — clean adds). Onboarded 2026-06-24.
           - path: "nextcloud-platform/values/tenants/tenant-delft-accept.yaml"
           - path: "nextcloud-platform/values/tenants/tenant-edam-volendam-accept.yaml"
-          # Gooise Meren PROD — no live frontend yet (clean add, no cut-over).
-          # Backend tenant is gooisemeren-migrate-prod; its frontend.host pins the
-          # public host to gooisemeren.openwoo.app (else it derives -migrate).
-          - path: "nextcloud-platform/values/tenants/tenant-gooisemeren-migrate-prod.yaml"
+          # POLICY: *-migrate-* tenants are TEMPORARY migration backends and do NOT
+          # get their own frontend — the canonical tenant's frontend already serves the
+          # public host. gooisemeren-migrate-prod was listed here but produced a
+          # gooisemeren-migrate-prod-reactfront app that only collided with the
+          # canonical gooisemeren frontend and sat Missing; removed 2026-06-30.
+          # When FASE 2 widens this to tenant-*.yaml, add an explicit *-migrate-*
+          # exclusion — git-files generators have no negative glob, so the wildcard
+          # would otherwise re-create these dead frontends.
 
   template:
     metadata:

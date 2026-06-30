@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Removed
+- **2026-06-30 — fix(argo): drop `gooisemeren-migrate-prod` frontend (migrate = no frontend).**
+  Removed the `tenant-gooisemeren-migrate-prod.yaml` glob from the `react-tenants`
+  generator. `*-migrate-*` tenants are TEMPORARY migration backends; the canonical
+  tenant's frontend already serves the public host. Here `gooisemeren.openwoo.app` is
+  served by the Healthy `gooisemeren-prod-reactfront` (namespace `gooisemeren`), so the
+  generated `gooisemeren-migrate-prod-reactfront` only produced a colliding Ingress and
+  sat `Missing`. Documented the policy in the generator as a standing rule (and a
+  FASE-2 reminder: a `tenant-*.yaml` widening must add an explicit `*-migrate-*`
+  exclusion). The orphaned Application + its `woo-website` resources are cleaned up
+  manually (generator uses `preserveResourcesOnDeletion: true`).
+
 ### Added
 - **2026-06-24 — feat(argo): onboard `delft-accept` + `edam-volendam-accept` frontends.**
   Added two explicit per-file globs to the `react-tenants` ApplicationSet generator
