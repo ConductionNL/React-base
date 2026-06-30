@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- **2026-06-30 — `NL_DESIGN_THEME_CLASSNAME` now always set on frontends (defaults to `<org>-theme`).**
+  The branding env only emitted the NL Design theme classname when a tenant explicitly
+  set `frontend.branding.themeClassname`, so onboarded tenants (wassenaar, voorschoten,
+  delft, …) rendered without a theme. The generator now derives `$theme` =
+  `<org>-theme` (e.g. `wassenaar-theme`) from the tenant name and always emits
+  `NL_DESIGN_THEME_CLASSNAME`; `frontend.branding.themeClassname` still overrides it.
+
 ### Changed
 - **2026-06-30 — frontend TLS now uses the shared wildcard cert (no per-tenant issuance).**
   The `react-tenants` generator no longer puts a `cert-manager.io/cluster-issuer`

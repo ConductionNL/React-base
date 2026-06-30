@@ -155,6 +155,8 @@ spec:
               {{- $org := trimSuffix (printf "-%s" $env) $ncname -}}
               {{- $fe := default (dict) .tenant.frontend -}}
               {{- $branding := default (dict) (index $fe "branding") -}}
+              {{- /* NL Design System theme classname defaults to "<org>-theme" (e.g. epe-theme); override via frontend.branding.themeClassname. */ -}}
+              {{- $theme := default (printf "%s-theme" $org) (index $branding "themeClassname") -}}
               {{- $extraEnv := default (dict) (index $fe "env") -}}
               {{- $tag := index $fe "tag" -}}
               {{- $domainSuffix := "" -}}
@@ -201,9 +203,8 @@ spec:
                   {{- with index $branding "organisationName" }}
                   GATSBY_ORGANISATION_NAME: "{{ . }}"
                   {{- end }}
-                  {{- with index $branding "themeClassname" }}
-                  NL_DESIGN_THEME_CLASSNAME: "{{ . }}"
-                  {{- end }}
+                  # NL Design theme — ALWAYS emitted, defaults to "<org>-theme".
+                  NL_DESIGN_THEME_CLASSNAME: "{{ $theme }}"
                   {{- with index $branding "jumbotronImageUrl" }}
                   GATSBY_JUMBOTRON_IMAGE_URL: "{{ . }}"
                   {{- end }}
