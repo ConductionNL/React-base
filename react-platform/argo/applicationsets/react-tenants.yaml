@@ -157,7 +157,7 @@ spec:
               {{- $branding := default (dict) (index $fe "branding") -}}
               {{- /* NL Design theme classname. Baseline default "conduction-theme" (it exists in
                      the bundled themes, so it renders out of the box). DEVS adjust this LIVE in
-                     Argo per gemeente — the GATSBY_*/NL_DESIGN_* env is ignore-diffed (see
+                     Argo per gemeente — the GATSBY_ and NL_DESIGN_ env is ignore-diffed (see
                      ignoreDifferences + RespectIgnoreDifferences below), so this git value is only
                      the initial baseline. frontend.branding.themeClassname overrides the baseline. */ -}}
               {{- $theme := default "conduction-theme" (index $branding "themeClassname") -}}
