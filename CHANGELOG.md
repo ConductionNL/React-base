@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- **2026-06-30 — frontend TLS now uses the shared wildcard cert (no per-tenant issuance).**
+  The `react-tenants` generator no longer puts a `cert-manager.io/cluster-issuer`
+  annotation on frontend Ingresses and no longer requests a per-host `<tenant>-tls`
+  cert. Instead every frontend references `wildcard-openwoo-tls` — the shared
+  `*.openwoo.app` + `*.accept.openwoo.app` cert issued in cluster-infra (DNS-01) and
+  reflected into each tenant namespace by reflector. Removes all per-tenant Let's
+  Encrypt issuance and its rate-limit pressure. **Depends on cluster-infra**: the
+  wildcard cert must be issued and reflected into a namespace before its frontend
+  Ingress can serve TLS — deploy cluster-infra first. Once live, the batched rollout
+  (batches 2–8) is no longer LE-constrained and may be released freely.
+
 ### Removed
 - **2026-06-30 — fix(argo): drop `gooisemeren-migrate-prod` frontend (migrate = no frontend).**
   Removed the `tenant-gooisemeren-migrate-prod.yaml` glob from the `react-tenants`

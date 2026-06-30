@@ -217,16 +217,18 @@ spec:
                   {{ $k }}: "{{ $v }}"
                   {{- end }}
               ingress:
-                annotations:
-                  # cert-manager normaal toegevoegd door chart als global.tls=true.
-                  # Wij zetten global.tls=false (zie boven), dus expliciet hier.
-                  cert-manager.io/cluster-issuer: letsencrypt-prod
+                # NO cert-manager annotation: TLS is served from the shared wildcard
+                # cert (*.openwoo.app + *.accept.openwoo.app, ClusterIssuer
+                # letsencrypt-dns in cluster-infra), reflected into this namespace as
+                # `wildcard-openwoo-tls` by reflector. Zero per-tenant LE issuance →
+                # no rate-limit pressure. (Requires the wildcard cert issued and
+                # reflected into this namespace first; see cluster-infra.)
                 # Geen `hosts:` block — de chart maakt al een rule op
                 # `global.domain`, dus een tweede via `ingress.hosts` levert
                 # een duplicate rule (zichtbaar als `host,host` in
                 # `kubectl get ingress`).
                 tls:
-                  - secretName: "{{ $ncname }}-tls"
+                  - secretName: "wildcard-openwoo-tls"
                     hosts:
                       - "{{ $host }}"
 
