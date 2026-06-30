@@ -68,6 +68,8 @@ spec:
           - path: "nextcloud-platform/values/tenants/tenant-voorschoten-accept.yaml"
           - path: "nextcloud-platform/values/tenants/tenant-wassenaar-accept.yaml"
           - path: "nextcloud-platform/values/tenants/tenant-ridderkerk-accept.yaml"
+          # --- legacy-migratie Tier 1 (cutover van de oude toolchain-frontend) ---
+          - path: "nextcloud-platform/values/tenants/tenant-epe-accept.yaml"   # pilot 2026-06-30
           # --- batch 2 (uncomment to release) ---
           #- path: "nextcloud-platform/values/tenants/tenant-acato-accept.yaml"
           #- path: "nextcloud-platform/values/tenants/tenant-alkmaar-accept.yaml"
