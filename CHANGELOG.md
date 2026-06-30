@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- **2026-06-30 — theme env key must be GATSBY_-prefixed.** The generator emitted
+  `NL_DESIGN_THEME_CLASSNAME`, but the Gatsby app only reads
+  `GATSBY_NL_DESIGN_THEME_CLASSNAME` client-side (verified in the JS bundle: 82 refs
+  vs 6). So the theme never applied regardless of the classname value or theme asset.
+  Renamed the emitted key to `GATSBY_NL_DESIGN_THEME_CLASSNAME` (still covered by the
+  `^(GATSBY_|NL_DESIGN_)` ignore-diff). Existing deployments carrying the old un-prefixed
+  key are not auto-corrected (ignore-diff freezes branding env) — set the GATSBY_-prefixed
+  key live, or recreate the frontend.
+
 ### Changed
 - **2026-06-30 — theme baseline = `conduction-theme`; branding/theme env is dev-editable LIVE (not GitOps).**
   Per dev request: the `NL_DESIGN_THEME_CLASSNAME` baseline default changed from

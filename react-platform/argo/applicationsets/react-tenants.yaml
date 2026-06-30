@@ -208,7 +208,9 @@ spec:
                   GATSBY_ORGANISATION_NAME: "{{ . }}"
                   {{- end }}
                   # NL Design theme — ALWAYS emitted; baseline conduction-theme, dev-editable LIVE (ignore-diff).
-                  NL_DESIGN_THEME_CLASSNAME: "{{ $theme }}"
+                  # Key MUST be GATSBY_-prefixed: the Gatsby app only reads GATSBY_NL_DESIGN_THEME_CLASSNAME
+                  # client-side (verified in the JS bundle). The un-prefixed key is ignored by the app.
+                  GATSBY_NL_DESIGN_THEME_CLASSNAME: "{{ $theme }}"
                   {{- with index $branding "jumbotronImageUrl" }}
                   GATSBY_JUMBOTRON_IMAGE_URL: "{{ . }}"
                   {{- end }}
