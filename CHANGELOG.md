@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- **2026-06-30 — theme baseline = `conduction-theme`; branding/theme env is dev-editable LIVE (not GitOps).**
+  Per dev request: the `NL_DESIGN_THEME_CLASSNAME` baseline default changed from
+  `<org>-theme` to **`conduction-theme`** (which exists in the bundled themes, so it
+  renders out of the box). Added `ignoreDifferences` (jqPathExpression matching
+  `^(GATSBY_|NL_DESIGN_)` env on the woo-website Deployment) + sync option
+  `RespectIgnoreDifferences=true`, so devs adjust branding/theme env **live in Argo**
+  without selfHeal reverting or a sync clobbering it. `UPSTREAM_HOST`/`UPSTREAM_BASE`
+  stay git-managed. **Trade-off (accepted):** live edits are unaudited, unreviewed, and
+  lost if the Deployment is recreated. **Caveat:** frontends already carrying an
+  `<org>-theme` value are frozen there by ignore-diff — they won't auto-flip to
+  `conduction-theme`; set them live once.
+
 ### Fixed
 - **2026-06-30 — `NL_DESIGN_THEME_CLASSNAME` now always set on frontends (defaults to `<org>-theme`).**
   The branding env only emitted the NL Design theme classname when a tenant explicitly
