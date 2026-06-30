@@ -67,6 +67,7 @@ spec:
           # --- batch 1 (PRIORITY — live) ---
           - path: "nextcloud-platform/values/tenants/tenant-voorschoten-accept.yaml"
           - path: "nextcloud-platform/values/tenants/tenant-wassenaar-accept.yaml"
+          - path: "nextcloud-platform/values/tenants/tenant-ridderkerk-accept.yaml"
           # --- batch 2 (uncomment to release) ---
           #- path: "nextcloud-platform/values/tenants/tenant-acato-accept.yaml"
           #- path: "nextcloud-platform/values/tenants/tenant-alkmaar-accept.yaml"
