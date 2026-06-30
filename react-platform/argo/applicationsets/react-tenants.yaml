@@ -52,6 +52,60 @@ spec:
           # in toolchain/ to cut over — clean adds). Onboarded 2026-06-24.
           - path: "nextcloud-platform/values/tenants/tenant-delft-accept.yaml"
           - path: "nextcloud-platform/values/tenants/tenant-edam-volendam-accept.yaml"
+          # --- 2026-06-30: every WOO tenant gets a frontend. These tenants had NO
+          #     *-reactfront app (gap computed from the live cluster) so they do NOT
+          #     collide with the 44 legacy apps. EXCLUDED on purpose (not WOO portals):
+          #     vng-backend-* / softwarecatalogus-* / pipelinq-server-prod. The 21
+          #     tenants already on a LEGACY frontend stay there until migrated.
+          #
+          #     ROLLOUT IS BATCHED (~5/batch) to stay under the Let's Encrypt limit of
+          #     50 certs/week per registered domain (openwoo.app): each onboarded
+          #     frontend mints one <host>.openwoo.app cert. Release ONE batch (uncomment
+          #     its 5 lines), push, confirm the certs issue Ready, then the next batch.
+          #     If issuance starts failing ("too many certificates already issued"),
+          #     pause until the weekly window rolls — or move to a wildcard cert.
+          # --- batch 1 (PRIORITY — live) ---
+          - path: "nextcloud-platform/values/tenants/tenant-voorschoten-accept.yaml"
+          - path: "nextcloud-platform/values/tenants/tenant-wassenaar-accept.yaml"
+          # --- batch 2 (uncomment to release) ---
+          #- path: "nextcloud-platform/values/tenants/tenant-acato-accept.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-alkmaar-accept.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-barneveld-prod.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-connext-prod.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-debilt-accept.yaml"
+          # --- batch 3 ---
+          #- path: "nextcloud-platform/values/tenants/tenant-debilt-prod.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-dijkenwaard-prod.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-docudesk-prod.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-epe-accept.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-ermelo-accept.yaml"
+          # --- batch 4 ---
+          #- path: "nextcloud-platform/values/tenants/tenant-gouda-accept.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-gouda-prod.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-harderwijk-accept.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-helmond-accept.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-io-accept.yaml"
+          # --- batch 5 ---
+          #- path: "nextcloud-platform/values/tenants/tenant-leiderdorp-accept.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-mboraad-prod.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-meerinzicht-accept.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-meppel-prod.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-noordwijk-prod.yaml"
+          # --- batch 6 ---
+          #- path: "nextcloud-platform/values/tenants/tenant-oegstgeest-accept.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-opengemeenten-accept.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-oudeijsselstreek-accept.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-rijswijk-accept.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-sloterburg-accept.yaml"
+          # --- batch 7 ---
+          #- path: "nextcloud-platform/values/tenants/tenant-terneuzen-accept.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-terneuzen-prod.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-tilburg-preprod-prod.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-voorst-prod.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-zeewolde-accept.yaml"
+          # --- batch 8 ---
+          #- path: "nextcloud-platform/values/tenants/tenant-zoeterwoude-accept.yaml"
+          #- path: "nextcloud-platform/values/tenants/tenant-zwolle-prod.yaml"
           # POLICY: *-migrate-* tenants are TEMPORARY migration backends and do NOT
           # get their own frontend — the canonical tenant's frontend already serves the
           # public host. gooisemeren-migrate-prod was listed here but produced a

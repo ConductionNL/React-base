@@ -19,6 +19,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   manually (generator uses `preserveResourcesOnDeletion: true`).
 
 ### Added
+- **2026-06-30 — feat(argo): onboard frontend-less WOO tenants (batched for Let's Encrypt).**
+  Every WOO tenant should have a frontend. Added globs to the `react-tenants` generator
+  for the 34 tenants that had NO `*-reactfront` app (gap computed from the live cluster,
+  so no collision with the 44 legacy apps). EXCLUDED on purpose (not WOO portals):
+  `vng-backend-*`, `softwarecatalogus-*`, `pipelinq-server-prod`. The 21 tenants already
+  on a LEGACY frontend are left untouched (migrated later).
+  **Rolled out in batches of ~5** (each frontend mints a `*.openwoo.app` cert; Let's
+  Encrypt allows 50 certs/week per registered domain). Release one batch (uncomment its
+  lines), push, confirm certs issue, then the next. **Batch 1 (PRIORITY, live):**
+  `voorschoten-accept`, `wassenaar-accept`. Batches 2–8 staged (commented) in the
+  generator. Longer term, a wildcard `*.openwoo.app` cert removes the per-tenant cert
+  pressure entirely.
 - **2026-06-24 — feat(argo): onboard `delft-accept` + `edam-volendam-accept` frontends.**
   Added two explicit per-file globs to the `react-tenants` ApplicationSet generator
   (`tenant-delft-accept.yaml`, `tenant-edam-volendam-accept.yaml`). Both are new
