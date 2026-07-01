@@ -22,29 +22,25 @@
 # platform-default te upgraden. Zie project memory en MIGRATION.md.
 pwa:
   image:
-    image: ghcr.io/conductionnl/woo-website-v2
+    image: docker.io/conduction2022/woo-website-v2
     pullPolicy: IfNotPresent
-    tag: "development-V1.0.260422"
-
+    tag: "latest"
 # ---------- Pod placement ----------
 # Frontends co-locate on the Nextcloud nodepool (status quo from
 # create_react.sh). A future openspec change can move them off; until then
 # this is platform default.
 nodeSelector:
   role: prod-nextcloud
-
 tolerations:
   - key: nextcloud-only
     operator: Equal
     value: "true"
     effect: NoSchedule
-
 # ---------- Service ----------
 # Chart Service maps to container port 8080 (nginx in pwa/Dockerfile).
 service:
   type: ClusterIP
   port: 80
-
 # ---------- Ingress ----------
 # Ingress class is cluster-wide (ingress-nginx). Hostname and TLS secret are
 # computed per-tenant by the ApplicationSet template.
@@ -54,29 +50,25 @@ ingress:
   enabled: true
   className: nginx
   pathType: ImplementationSpecific
-
 # ---------- Gateway ----------
 # Chart-internal flag. Keep on (matches today's manifests).
 gateway:
   enabled: true
-
 # ---------- Service account ----------
 # Dedicated SA per release (least-privilege, no default-SA hijack).
 serviceAccount:
   create: true
-
 # ---------- Security ----------
 # Pod-level: non-root, seccomp default, fsGroup matches runAsGroup so mount
 # permissions line up. Values match the chart's platform-grade defaults but
 # are pinned here so a chart-default change doesn't silently relax security.
 podSecurityContext:
   runAsNonRoot: true
-  runAsUser: 101    # nginx UID in nginx:alpine
+  runAsUser: 101 # nginx UID in nginx:alpine
   runAsGroup: 101
   fsGroup: 101
   seccompProfile:
     type: RuntimeDefault
-
 # Container-level: drop all caps, no privilege escalation. readOnlyRootFilesystem
 # stays off until 30-generate-runtime.sh writes to a tmpfs instead of image-fs
 # (see chart pwa/Dockerfile).
@@ -89,7 +81,6 @@ securityContext:
   capabilities:
     drop:
       - ALL
-
 # ---------- Probes ----------
 # Pinned (chart defaults are sane for static nginx).
 livenessProbe:
@@ -100,7 +91,6 @@ livenessProbe:
   periodSeconds: 30
   timeoutSeconds: 3
   failureThreshold: 3
-
 readinessProbe:
   httpGet:
     path: /
@@ -109,7 +99,6 @@ readinessProbe:
   periodSeconds: 10
   timeoutSeconds: 3
   failureThreshold: 3
-
 # ---------- Resources (platform default) ----------
 # Static nginx → tiny baseline. env/*.yaml can override for prod-tier.
 resources:
@@ -119,7 +108,6 @@ resources:
   limits:
     cpu: 500m
     memory: 256Mi
-
 # ---------- NetworkPolicies ----------
 # Policies live in the vendored chart at templates/networkpolicy.yaml.
 # Pod-label scoped (`app.kubernetes.io/part-of: react-platform`) to coexist
