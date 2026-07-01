@@ -180,6 +180,15 @@ spec:
               {{- $theme := default "conduction-theme" (index $branding "themeClassname") -}}
               {{- $extraEnv := default (dict) (index $fe "env") -}}
               {{- $tag := index $fe "tag" -}}
+              {{- /* Per-tenant TLS override for custom-domain frontends (NOT covered by the
+                     *.openwoo.app wildcard). Default = wildcard-openwoo-tls, no issuer annotation.
+                     Set frontend.tls.secretName + frontend.tls.issuer:
+                       issuer "none"  = BYO / pre-seeded secret (no annotation, no issuance);
+                       any other value = cert-manager cluster-issuer (e.g. letsencrypt-prod,
+                                         HTTP-01) → per-host cert. Pair with frontend.host. */ -}}
+              {{- $tls := default (dict) (index $fe "tls") -}}
+              {{- $tlsSecret := default "wildcard-openwoo-tls" (index $tls "secretName") -}}
+              {{- $tlsIssuer := default "" (index $tls "issuer") -}}
               {{- $domainSuffix := "" -}}
               {{- $upstreamSuffix := "" -}}
               {{- if eq $env "prod" -}}
@@ -241,18 +250,19 @@ spec:
                   {{ $k }}: "{{ $v }}"
                   {{- end }}
               ingress:
-                # NO cert-manager annotation: TLS is served from the shared wildcard
-                # cert (*.openwoo.app + *.accept.openwoo.app, ClusterIssuer
-                # letsencrypt-dns in cluster-infra), reflected into this namespace as
-                # `wildcard-openwoo-tls` by reflector. Zero per-tenant LE issuance →
-                # no rate-limit pressure. (Requires the wildcard cert issued and
-                # reflected into this namespace first; see cluster-infra.)
-                # Geen `hosts:` block — de chart maakt al een rule op
-                # `global.domain`, dus een tweede via `ingress.hosts` levert
-                # een duplicate rule (zichtbaar als `host,host` in
-                # `kubectl get ingress`).
+                # TLS: default = shared wildcard (wildcard-openwoo-tls, reflected into this
+                # namespace by reflector; NO issuer annotation → zero per-tenant issuance).
+                # Custom-domain tenants (not under *.openwoo.app) set frontend.tls to get their
+                # own cert: issuer != "none" adds cert-manager.io/cluster-issuer for a per-host
+                # cert; issuer "none" references a pre-seeded/BYO secret with no annotation.
+                {{- if and $tlsIssuer (ne $tlsIssuer "none") }}
+                annotations:
+                  cert-manager.io/cluster-issuer: "{{ $tlsIssuer }}"
+                {{- end }}
+                # Geen `hosts:` block — de chart maakt al een rule op `global.domain`, dus
+                # een tweede via `ingress.hosts` levert een duplicate rule.
                 tls:
-                  - secretName: "wildcard-openwoo-tls"
+                  - secretName: "{{ $tlsSecret }}"
                     hosts:
                       - "{{ $host }}"
 
