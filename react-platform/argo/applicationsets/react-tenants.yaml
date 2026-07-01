@@ -309,6 +309,10 @@ spec:
           # unaudited, unreviewed, and lost if the Deployment is recreated.
           jqPathExpressions:
             - '.spec.template.spec.containers[].env[] | select(.name | test("^(GATSBY_|NL_DESIGN_)"))'
+            # Container image (registry+tag) is DEV-EDITABLE LIVE in Argo too (self-service
+            # tag bumps without a git push). frontend.tag in the tenant file is then only the
+            # INITIAL value on a fresh deploy; live edits stick and are not reverted.
+            - '.spec.template.spec.containers[].image'
         - group: autoscaling
           kind: HorizontalPodAutoscaler
           jsonPointers:
