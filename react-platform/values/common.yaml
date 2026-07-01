@@ -24,7 +24,7 @@ pwa:
   image:
     image: docker.io/conduction2022/woo-website-v2
     pullPolicy: IfNotPresent
-    tag: "latest"
+    tag: "V1.0.260422-development"
 # ---------- Pod placement ----------
 # Frontends co-locate on the Nextcloud nodepool (status quo from
 # create_react.sh). A future openspec change can move them off; until then
