@@ -71,12 +71,10 @@ spec:
           - path: "nextcloud-platform/values/tenants/tenant-midden-delfland-prod.yaml"  # clean add (prio 2026-07-01)
           # --- legacy-migratie Tier 1 (cutover van de oude toolchain-frontend) ---
           - path: "nextcloud-platform/values/tenants/tenant-epe-accept.yaml"   # pilot 2026-06-30
-          # batch 2026-07-01 (accept): onboard → branding live → legacy cutover per tenant
-          - path: "nextcloud-platform/values/tenants/tenant-almere-accept.yaml"
-          - path: "nextcloud-platform/values/tenants/tenant-baarn-accept.yaml"
-          - path: "nextcloud-platform/values/tenants/tenant-buren-accept.yaml"
-          - path: "nextcloud-platform/values/tenants/tenant-hoekschewaard-accept.yaml"
-          - path: "nextcloud-platform/values/tenants/tenant-sloterburg-accept.yaml"
+          # NB: Tier-1 accept batch teruggerold 2026-07-01. Redo per tenant met een
+          # GECUREERD frontend-blok in de Nextcloud-base tenant-file (correct theme +
+          # branding + frontend.tag: latest), NIET via live kubectl set env (dat racete
+          # met de sync). Zie scratchpad/batch-stop-en-correctie.md.
           # --- batch 2 (uncomment to release) ---
           #- path: "nextcloud-platform/values/tenants/tenant-acato-accept.yaml"
           #- path: "nextcloud-platform/values/tenants/tenant-alkmaar-accept.yaml"
