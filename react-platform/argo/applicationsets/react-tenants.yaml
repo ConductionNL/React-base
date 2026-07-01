@@ -76,6 +76,10 @@ spec:
           - path: "nextcloud-platform/values/tenants/tenant-baarn-accept.yaml"       # restore (legacy weg bij cleanup)
           - path: "nextcloud-platform/values/tenants/tenant-buren-accept.yaml"       # restore
           - path: "nextcloud-platform/values/tenants/tenant-sloterburg-accept.yaml"  # restore
+          # Tier-1 prod (collision → auto-cutover via adoptie; tags matchen legacy)
+          - path: "nextcloud-platform/values/tenants/tenant-baarn-prod.yaml"
+          - path: "nextcloud-platform/values/tenants/tenant-helmond-prod.yaml"
+          - path: "nextcloud-platform/values/tenants/tenant-openwoo-prod.yaml"
           # NB: Tier-1 accept batch teruggerold 2026-07-01. Redo per tenant met een
           # GECUREERD frontend-blok in de Nextcloud-base tenant-file (correct theme +
           # branding + frontend.tag: latest), NIET via live kubectl set env (dat racete
