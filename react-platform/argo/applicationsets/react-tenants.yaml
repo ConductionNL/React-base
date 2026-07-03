@@ -76,6 +76,7 @@ spec:
           - path: "nextcloud-platform/values/tenants/tenant-baarn-accept.yaml"       # restore (legacy weg bij cleanup)
           - path: "nextcloud-platform/values/tenants/tenant-buren-accept.yaml"       # restore
           - path: "nextcloud-platform/values/tenants/tenant-sloterburg-accept.yaml"  # restore
+          - path: "nextcloud-platform/values/tenants/tenant-edetest-accept.yaml"     # add 2026-07-03
           # Tier-1 prod (collision → auto-cutover via adoptie; tags matchen legacy)
           - path: "nextcloud-platform/values/tenants/tenant-baarn-prod.yaml"
           - path: "nextcloud-platform/values/tenants/tenant-helmond-prod.yaml"
