@@ -116,8 +116,8 @@ spec:
           #- path: "nextcloud-platform/values/tenants/tenant-rijswijk-accept.yaml"
           #- path: "nextcloud-platform/values/tenants/tenant-sloterburg-accept.yaml"
           # --- batch 7 ---
-          #- path: "nextcloud-platform/values/tenants/tenant-terneuzen-accept.yaml"
-          #- path: "nextcloud-platform/values/tenants/tenant-terneuzen-prod.yaml"
+          - path: "nextcloud-platform/values/tenants/tenant-terneuzen-accept.yaml"   # activate 2026-07-03 (postgres redo)
+          - path: "nextcloud-platform/values/tenants/tenant-terneuzen-prod.yaml"     # activate 2026-07-03 (postgres redo)
           #- path: "nextcloud-platform/values/tenants/tenant-tilburg-preprod-prod.yaml"
           #- path: "nextcloud-platform/values/tenants/tenant-voorst-prod.yaml"
           #- path: "nextcloud-platform/values/tenants/tenant-zeewolde-accept.yaml"
