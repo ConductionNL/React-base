@@ -21,8 +21,9 @@ Operationele regel (uit `CLAUDE.md`): platform-wijzigingen alleen
 van mwest2020. Sociaal afgedwongen, niet technisch — de AppProject
 blokkeert weekends niet zelf.
 
-Tenant-specifieke wijzigingen (alleen in `values/tenants/`) zijn altijd
-toegestaan: ze raken één Application, niet de hele platform-meta.
+Tenant-specifieke wijzigingen (het tenant-bestand of `tenant.frontend:`-blok
+in **Nextcloud-base** `values/tenants/`) zijn altijd toegestaan: ze raken
+één Application, niet de hele platform-meta.
 
 ## Wat telt als platform-wijziging?
 
@@ -34,9 +35,12 @@ toegestaan: ze raken één Application, niet de hele platform-meta.
 
 ## Wat is een tenant-wijziging?
 
-- Nieuwe `values/tenants/tenant-*.yaml` toevoegen
-- Branding aanpassen in een bestaand tenant-bestand
-- Tenant verwijderen
+Alles in het tenant-bestand in **Nextcloud-base**
+(`nextcloud-platform/values/tenants/tenant-*.yaml`):
+
+- Nieuwe tenant toevoegen (frontend volgt automatisch)
+- `tenant.frontend:`-blok toevoegen of aanpassen (branding, tag, host)
+- Tenant of frontend verwijderen (`enabled: false`)
 
 ## Image-tag bumpen
 

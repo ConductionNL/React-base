@@ -37,24 +37,27 @@ co-tenant). Alleen voor tenants die vandaag draaien onder de oude
    ```
    Dit bestand staat in `.gitignore` — niet commiten.
 
-2. **Per tenant**: maak `react-platform/values/tenants/tenant-<naam>-<env>.yaml`.
-   Zet `tenant.name` + `tenant.environment`. Kopieer alle `pwa.env.GATSBY_*`
-   en `NL_DESIGN_THEME_CLASSNAME` uit `cluster-state.yaml` naar de
-   `branding`-map. Tenants zonder branding zijn 2 regels.
+2. **Per tenant**: voeg een `tenant.frontend:`-blok toe aan het bestaande
+   tenant-bestand in **Nextcloud-base**
+   (`nextcloud-platform/values/tenants/tenant-<naam>-<env>.yaml`) — zie
+   [ADDING-TENANT.md](ADDING-TENANT.md). Kopieer alle `pwa.env.GATSBY_*`
+   en `NL_DESIGN_THEME_CLASSNAME` uit `cluster-state.yaml` naar
+   `frontend.branding`/`frontend.env`. Tenants zonder branding hebben
+   geen blok nodig.
 
    **BELANGRIJK — image-tag override tijdens cut-over:**
-   Voeg expliciet toe aan elk migrerend tenant-bestand:
+   Zet expliciet in het frontend-blok van elk migrerend tenant-bestand:
    ```yaml
-   pwa:
-     image:
+   tenant:
+     frontend:
        tag: latest
    ```
    Reden: bestaande tenants draaien `:latest` (digest verschilt van de
-   `common.yaml` pin `development-V1.0.260422`). Zonder override wisselt
+   platform-pin `development-V1.0.260422`). Zonder override wisselt
    de tenant tegelijk met de namespace-move ook van image-versie — dubbele
    verandering, dubbel risico. De override zet de tenant gelijk aan zijn
-   huidige image. Pas later, in een aparte sync window, verwijder je het
-   override-blok om naar de platform-default te tillen — dat is dan een
+   huidige image. Pas later, in een aparte sync window, verwijder je de
+   `tag` om naar de platform-default te tillen — dat is dan een
    bewuste image-upgrade.
 
 3. **Verifieer renders**:
@@ -130,8 +133,9 @@ Uitvoeren binnen 17:00–07:00 sync window. Begin met canary
    ```bash
    kubectl apply -f toolchain/woo-application-<naam>-<env>.yaml
    ```
-2. Verwijder `react-platform/values/tenants/tenant-<naam>.yaml` uit Git
-   (PR-revert). De ApplicationSet stopt met deze tenant te beheren.
+2. Zet `tenant.frontend.enabled: false` in het Nextcloud-base
+   tenant-bestand (PR-revert van het frontend-blok kan ook). De
+   ApplicationSet stopt met deze tenant te beheren.
 3. cert-manager re-issued in de oude namespace zodra de oude Ingress
    weer staat.
 

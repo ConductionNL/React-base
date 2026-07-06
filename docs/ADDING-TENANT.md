@@ -5,107 +5,65 @@ owner: mark
 
 # Tenant toevoegen
 
-Een nieuwe WOO PWA-tenant aanmelden duurt twee minuten en is pure GitOps —
-geen `kubectl`, geen Cloudflare, geen TLS-handelingen.
+**In deze repo maak je géén tenant aan.** De bron van waarheid is
+`Nextcloud-base/nextcloud-platform/values/tenants/` — de ApplicationSet
+`react-tenants` watcht die directory rechtstreeks ("Argo ís de watcher").
+Een Nextcloud-tenant toevoegen betekent automatisch een WOO PWA-frontend
+erbij: de frontend-vloot is een pure functie van de Nextcloud-tenantvloot,
+zonder tweede bestand en dus zonder drift.
 
 ## Stappen
 
-1. Kopieer `react-platform/values/templates/tenant-template.yaml` naar
-   `react-platform/values/tenants/tenant-<naam>-<environment>.yaml`
-   (bv. `tenant-almere-accept.yaml`, `tenant-almere-prod.yaml`).
-2. Vul minimaal in:
-   ```yaml
-   tenant:
-     name: <naam>
-     environment: accept   # of: prod
+1. Voeg de tenant toe in **Nextcloud-base** (zie `ADDING-TENANT.md` in
+   die repo): één `tenant-<naam>-<env>.yaml` met minimaal `tenant.name`
+   en `tenant.environment`.
+2. (Optioneel) Configureer de frontend via een `tenant.frontend:`-blok
+   in **datzelfde** bestand — zie hieronder. Geen blok = frontend met
+   platform-defaults (opt-out-model).
+3. Valideer vanuit deze repo (vereist een Nextcloud-base checkout):
+   ```bash
+   ./react-platform/scripts/validate-values.sh
+   ./react-platform/scripts/smoke-checks.sh
    ```
-3. (Optioneel) Voeg branding-overrides toe — zie de template voor de
-   beschikbare velden.
-4. Commit + push. Open een PR.
-5. Na merge pakt de ApplicationSet `react-tenants` het bestand automatisch
-   op en maakt een Argo CD Application aan (`<naam>-<environment>-reactfront`).
+4. Na merge in Nextcloud-base maakt Argo CD de Application
+   `<tenant.name>-reactfront` aan. Hostname (`<org>.openwoo.app` of
+   `<org>.accept.openwoo.app`), DNS (external-dns), TLS (cert-manager)
+   en NetworkPolicies volgen automatisch.
 
-## Wat gebeurt er automatisch?
+## Het `tenant.frontend:`-blok
 
-| Stap | Door wie |
-|---|---|
-| Argo Application aanmaken | ApplicationSet `react-tenants` |
-| Namespace gebruiken | Bestaande co-tenant namespace `<naam>-<environment>` (Nextcloud-base) |
-| Hostname genereren | ApplicationSet template — `<naam>.openwoo.app` (prod) of `<naam>.accept.openwoo.app` (accept) |
-| DNS-record op Cloudflare | `cluster-infra/external-dns` (auto-create) |
-| TLS-certificaat | cert-manager via HTTP-01 |
-| NetworkPolicies | Vendored chart `templates/networkpolicy.yaml` |
-| Pod-placement | `nodeSelector: role: prod-nextcloud` (zie `values/common.yaml`) |
-
-**Geen actie nodig op Cloudflare**, geen TLS-secret aanmaken, geen DNS-edits.
-External-DNS reageert op de Ingress die de chart deployt.
-
-## Voorwaarde: namespace bestaat al
-
-De frontend-pod landt in dezelfde namespace als de Nextcloud-tenant
-(bijvoorbeeld `almere-accept` of `almere-prod`). Die namespace wordt
-beheerd door `Nextcloud-base` en moet er zijn vóór de eerste sync van
-deze frontend.
-
-Verifieer met:
-```bash
-kubectl get ns <naam>-<environment>
-```
-
-Als de namespace ontbreekt: er is geen Nextcloud co-tenant in deze
-omgeving. Maak die eerst aan via `Nextcloud-base` (`values/tenants/`
-add tenant), of maak de namespace handmatig met label
-`app.kubernetes.io/part-of: nextcloud-platform`.
-
-## Voorbeelden
-
-### Minimale tenant (geen branding)
 ```yaml
 tenant:
-  name: test-mcc
+  name: almere-accept        # encodeert al de omgeving
   environment: accept
+  frontend:
+    enabled: true            # false = geen frontend (interne/test-tenants)
+    tag: "development-V1.0.260422"   # per-tenant image-pin
+    host: "woo.almere.nl"    # override van <org>.openwoo.app
+    branding:
+      organisationName: "Gemeente Almere"
+      themeClassname: almere-theme
+      jumbotronImageUrl: "https://..."
+      faviconUrl: "data:image/png;base64,..."
+      footerHideLogo: true
+    env:                     # vrije GATSBY_*/NL_DESIGN_* passthrough
+      GATSBY_SOMETHING: "x"
 ```
 
-### Tenant met branding (Almere-stijl)
-```yaml
-tenant:
-  name: almere
-  environment: accept
-  branding:
-    organisationName: "Gemeente Almere"
-    themeClassname: almere-theme
-    footerHideLogo: true
-    jumbotronImageUrl: "https://..."
-    faviconUrl: "data:image/png;base64,..."
-```
+Al het overige (hostname, upstream-API-URL, TLS-secret, namespace) leidt
+de ApplicationSet af uit `tenant.name` + `tenant.environment` — zie
+`react-platform/argo/applicationsets/react-tenants.yaml`.
 
-### Tenant met afwijkende hostname
-```yaml
-tenant:
-  name: speciaal
-  environment: prod
-  hostname: woo.speciaal.gemeente.nl   # override van convention
-```
+## Frontend uitzetten of tenant verwijderen
 
-## Validatie vóór commit
-
-Voer beide scripts uit voor je een PR opent:
-
-```bash
-./react-platform/scripts/validate-values.sh
-./react-platform/scripts/smoke-checks.sh
-```
-
-`validate-values.sh` controleert vereiste velden en filename-conventie.
-`smoke-checks.sh` rendert de chart met je tenant-config en valideert
-het resultaat tegen Kubernetes-schema's.
-
-## Verwijderen
-
-1. Verwijder `react-platform/values/tenants/tenant-<naam>.yaml`.
-2. Commit + push + merge.
-3. Verwijder de bijbehorende Application **handmatig** in Argo CD —
-   `preserveResourcesOnDeletion: true` in de ApplicationSet voorkomt
-   per ongeluk verwijderen. Met cascade verdwijnt de Deployment, Service,
-   Ingress, NetworkPolicies, en cert-manager Cert. external-DNS reapt
-   het Cloudflare-record.
+- **Alleen de frontend uit**: zet `tenant.frontend.enabled: false` in het
+  Nextcloud-base tenant-bestand.
+- **Hele tenant weg**: verwijder het tenant-bestand in Nextcloud-base
+  (volg `REMOVING-TENANT.md` daar). Let op:
+  `preserveResourcesOnDeletion: true` — de frontend-Application en
+  resources blijven staan tot een operator ze bewust opruimt:
+  ```bash
+  kubectl delete application -n argocd <tenant.name>-reactfront
+  kubectl delete -n <tenant.name> -l react.platform/tenant=<org> all,ingress,networkpolicy,cert
+  ```
+  external-dns ruimt het Cloudflare-record op zodra de Ingress weg is.
