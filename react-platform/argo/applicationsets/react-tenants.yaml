@@ -120,6 +120,11 @@ spec:
               {{- $tls := default (dict) (index $fe "tls") -}}
               {{- $tlsSecret := default "wildcard-openwoo-tls" (index $tls "secretName") -}}
               {{- $tlsIssuer := default "" (index $tls "issuer") -}}
+              {{- /* frontend.extraHosts: extra publieke hosts naast de primaire (bijv.
+                     open.gooisemeren.nl naast gooisemeren.openwoo.app). Ze delen het ENE
+                     tls-block/secret hieronder — met een issuer geeft cert-manager dus één
+                     multi-SAN cert uit. Leeg = exact dezelfde output als voorheen. */ -}}
+              {{- $extraHosts := default (list) (index $fe "extraHosts") -}}
               {{- $domainSuffix := "" -}}
               {{- $upstreamSuffix := "" -}}
               {{- if eq $env "prod" -}}
@@ -190,12 +195,25 @@ spec:
                 annotations:
                   cert-manager.io/cluster-issuer: "{{ $tlsIssuer }}"
                 {{- end }}
-                # Geen `hosts:` block — de chart maakt al een rule op `global.domain`, dus
-                # een tweede via `ingress.hosts` levert een duplicate rule.
+                # Geen `hosts:`-entry voor de primaire host — de chart maakt al een rule
+                # op `global.domain`; een tweede via `ingress.hosts` zou dubbel zijn.
+                # Alleen frontend.extraHosts komen hier als extra rules bij.
+                {{- with $extraHosts }}
+                hosts:
+                  {{- range . }}
+                  - host: "{{ . }}"
+                    paths:
+                      - path: /
+                        pathType: ImplementationSpecific
+                  {{- end }}
+                {{- end }}
                 tls:
                   - secretName: "{{ $tlsSecret }}"
                     hosts:
                       - "{{ $host }}"
+                      {{- range $extraHosts }}
+                      - "{{ . }}"
+                      {{- end }}
 
         # Values repo (this repo, React-base) — anchors $values references above.
         - repoURL: "https://codeberg.org/Conduction/React-base.git"
