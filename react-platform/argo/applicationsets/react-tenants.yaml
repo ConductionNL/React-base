@@ -124,6 +124,10 @@ spec:
           # --- batch 8 ---
           #- path: "nextcloud-platform/values/tenants/tenant-zoeterwoude-accept.yaml"
           #- path: "nextcloud-platform/values/tenants/tenant-zwolle-prod.yaml"
+          # --- legacy-migratie Tier 2 (custom domein; per PAAR, frontend.host+tls
+          #     in de Nextcloud-base tenant file) ---
+          - path: "nextcloud-platform/values/tenants/tenant-dinkelland-accept.yaml"   # paar 1, 2026-07-06
+          - path: "nextcloud-platform/values/tenants/tenant-gooisemeren-accept.yaml"  # paar 1, 2026-07-06
           # POLICY: *-migrate-* tenants are TEMPORARY migration backends and do NOT
           # get their own frontend — the canonical tenant's frontend already serves the
           # public host. gooisemeren-migrate-prod was listed here but produced a
