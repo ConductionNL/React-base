@@ -101,7 +101,7 @@ spec:
           #- path: "nextcloud-platform/values/tenants/tenant-gouda-accept.yaml"
           #- path: "nextcloud-platform/values/tenants/tenant-gouda-prod.yaml"
           #- path: "nextcloud-platform/values/tenants/tenant-harderwijk-accept.yaml"
-          #- path: "nextcloud-platform/values/tenants/tenant-helmond-accept.yaml"
+          - path: "nextcloud-platform/values/tenants/tenant-helmond-accept.yaml"  # activate 2026-07-06 (wildcard-tls, geen LE-issuance)
           #- path: "nextcloud-platform/values/tenants/tenant-io-accept.yaml"
           # --- batch 5 ---
           #- path: "nextcloud-platform/values/tenants/tenant-leiderdorp-accept.yaml"
