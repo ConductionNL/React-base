@@ -1,3 +1,8 @@
+---
+last_reviewed: 2026-07-06
+owner: mark
+---
+
 # Migratie: van losse Applications naar ApplicationSet
 
 Eenmalige cut-over per tenant. Verplaatst de WOO PWA-pod van namespace

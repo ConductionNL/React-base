@@ -1,3 +1,8 @@
+---
+last_reviewed: 2026-07-06
+owner: mark
+---
+
 # Bootstrap
 
 Eenmalige setup om Argo CD `react-base` te laten zien. Daarna is alles GitOps.
@@ -10,7 +15,7 @@ kubectl-annotations).
 
 Vereist:
 - `kubectl`-context op de target-cluster (Argo CD draait in `argocd` ns)
-- Repo `https://github.com/ConductionNL/React-base.git` is publiek bereikbaar
+- Repo `https://codeberg.org/Conduction/React-base.git` is publiek bereikbaar
 
 ## Snelle weg: `./react-platform/scripts/bootstrap.sh`
 
@@ -43,7 +48,7 @@ metadata:
 type: Opaque
 stringData:
   type: git
-  url: https://github.com/ConductionNL/React-base.git
+  url: https://codeberg.org/Conduction/React-base.git
 EOF
 ```
 
@@ -94,18 +99,12 @@ dig +short canary.openwoo.app          # moet een IP teruggeven
 curl -I https://canary.openwoo.app     # 200 met geldige cert
 ```
 
-## Branch-context (huidig: testfase op `feat/bootstrap-react-platform`)
+## Branch-context
 
-Tijdens de canary-validatie wijzen `applications/root.yaml` (1×) en
-`applicationsets/react-tenants.yaml` (3×) naar de feature branch. Reden:
-GitHub repository rules eisen PR-review voor `development` en `main`,
-dus we kunnen daar niet rechtstreeks naar pushen tijdens de iteratie.
-Argo pulled rustig vanaf de feature branch.
-
-Zodra de canary stabiel draait: één PR die alle vier locaties naar
-`HEAD` (= main) zet, gemerged in een sync window.
-
-Zoek in de repo naar `TODO(post-canary)` — dat zijn de vier locaties.
+Alle Argo-bronnen (`applications/root.yaml`, `applicationsets/react-tenants.yaml`)
+staan op `targetRevision: HEAD` (= main). De canary-testfase op een
+feature branch is afgerond; er zijn geen `TODO(post-canary)`-locaties
+meer in de manifests.
 
 ## Sync forceren tijdens iteratie
 

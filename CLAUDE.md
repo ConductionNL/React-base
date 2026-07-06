@@ -60,7 +60,7 @@ tenant:
 - `react-platform/argo/` — AppProject (`react-platform`) and ApplicationSet (`react-tenants`)
 - `react-platform/values/` — common, env, tenants, templates
 - `react-platform/scripts/` — `validate-values.sh`, `smoke-checks.sh`
-- `react-platform/docs/` — `ADDING-TENANT.md`, `ROLLOUTS.md`, `MIGRATION.md`
+- `docs/` — `ADDING-TENANT.md`, `ROLLOUTS.md`, `MIGRATION.md`
 - `openspec/changes/` — design proposals (see `bootstrap-react-platform/` for the bootstrap)
 
 ### Namespace convention
@@ -105,11 +105,11 @@ Bumping the vendored chart is a platform-level change (sync window applies).
 
 ## Adding a new tenant
 
-See `react-platform/docs/ADDING-TENANT.md`. Short version: copy template, edit name + environment, commit, push. ApplicationSet picks it up on next sync. DNS, TLS, NetworkPolicies, and namespace co-tenancy are all automatic.
+See `docs/ADDING-TENANT.md`. Short version: copy template, edit name + environment, commit, push. ApplicationSet picks it up on next sync. DNS, TLS, NetworkPolicies, and namespace co-tenancy are all automatic.
 
 ## Migration from old standalone Applications
 
-See `react-platform/docs/MIGRATION.md`. Per-tenant cut-over with 1–3 minutes of downtime, inside the sync window. Canary (`test-mcc-accept`) first, soak 24h, then waves.
+See `docs/MIGRATION.md`. Per-tenant cut-over with 1–3 minutes of downtime, inside the sync window. Canary (`test-mcc-accept`) first, soak 24h, then waves.
 
 ## Resource policy
 

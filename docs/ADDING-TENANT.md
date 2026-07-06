@@ -1,3 +1,8 @@
+---
+last_reviewed: 2026-07-06
+owner: mark
+---
+
 # Tenant toevoegen
 
 Een nieuwe WOO PWA-tenant aanmelden duurt twee minuten en is pure GitOps —

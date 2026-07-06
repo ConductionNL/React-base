@@ -149,7 +149,7 @@ tenant:
 ```
 
 Voor de volledige walkthrough en validatie-stappen: zie
-[`react-platform/docs/ADDING-TENANT.md`](react-platform/docs/ADDING-TENANT.md).
+[`docs/ADDING-TENANT.md`](docs/ADDING-TENANT.md).
 
 ## 🌐 Hostname-conventies
 
@@ -165,9 +165,9 @@ Override per tenant via `tenant.hostname` of `tenant.apiBaseUrl` (zelden nodig).
 | Document | Onderwerp |
 |---|---|
 | [`CLAUDE.md`](CLAUDE.md) | Architectuur en regels — primaire referentie |
-| [`react-platform/docs/ADDING-TENANT.md`](react-platform/docs/ADDING-TENANT.md) | Tenant toevoegen, validatie, removal |
-| [`react-platform/docs/ROLLOUTS.md`](react-platform/docs/ROLLOUTS.md) | Sync windows, image-bumps, wave-volgorde, rollback |
-| [`react-platform/docs/MIGRATION.md`](react-platform/docs/MIGRATION.md) | Cut-over van losse Applications naar deze ApplicationSet |
+| [`docs/ADDING-TENANT.md`](docs/ADDING-TENANT.md) | Tenant toevoegen, validatie, removal |
+| [`docs/ROLLOUTS.md`](docs/ROLLOUTS.md) | Sync windows, image-bumps, wave-volgorde, rollback |
+| [`docs/MIGRATION.md`](docs/MIGRATION.md) | Cut-over van losse Applications naar deze ApplicationSet |
 | [`openspec/changes/bootstrap-react-platform/`](openspec/changes/bootstrap-react-platform/) | Design proposal en taken |
 
 ## 🔧 Validatie
