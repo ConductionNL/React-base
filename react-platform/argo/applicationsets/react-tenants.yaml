@@ -142,6 +142,7 @@ spec:
           - path: "nextcloud-platform/values/tenants/tenant-oudeijsselstreek-accept.yaml" # paar 7, 2026-07-06 (legacy naam -react: geen adoptie)
           - path: "nextcloud-platform/values/tenants/tenant-buren-prod.yaml"          # paar 8, 2026-07-06 (BYO Sectigo-cert, issuer none)
           - path: "nextcloud-platform/values/tenants/tenant-lansingerland-prod.yaml"  # paar 8, 2026-07-06
+          - path: "nextcloud-platform/values/tenants/tenant-noorderzijlvest-prod.yaml" # paar 9, 2026-07-06 (BYO Sectigo-cert, issuer none; extra footer-env)
           # POLICY: *-migrate-* tenants are TEMPORARY migration backends and do NOT
           # get their own frontend — the canonical tenant's frontend already serves the
           # public host. gooisemeren-migrate-prod was listed here but produced a
