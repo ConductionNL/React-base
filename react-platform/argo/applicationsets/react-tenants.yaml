@@ -130,6 +130,8 @@ spec:
           - path: "nextcloud-platform/values/tenants/tenant-gooisemeren-accept.yaml"  # paar 1, 2026-07-06
           - path: "nextcloud-platform/values/tenants/tenant-moerdijk-accept.yaml"     # paar 2, 2026-07-06
           - path: "nextcloud-platform/values/tenants/tenant-moerdijk-prod.yaml"       # paar 2, 2026-07-06 (upstream pin: legacy backend)
+          - path: "nextcloud-platform/values/tenants/tenant-noordwijk-accept.yaml"    # paar 3, 2026-07-06
+          - path: "nextcloud-platform/values/tenants/tenant-noordwijk-prod.yaml"      # paar 3, 2026-07-06 (verhuist naar noordwijk.openwoo.app)
           # POLICY: *-migrate-* tenants are TEMPORARY migration backends and do NOT
           # get their own frontend — the canonical tenant's frontend already serves the
           # public host. gooisemeren-migrate-prod was listed here but produced a
