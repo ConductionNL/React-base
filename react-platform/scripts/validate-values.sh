@@ -82,7 +82,12 @@ for f in "${files[@]}"; do
   fi
 
   if [[ $file_fail -eq 0 ]]; then
-    fe="$(yq -r 'if (.tenant | has("frontend")) then (.tenant.frontend.enabled // "true") else "default-on" end' "$f")"
+    # yq (mikefarah) kent geen jq-if/then; keuze in bash.
+    if [[ "$(yq -r '.tenant | has("frontend")' "$f")" == "true" ]]; then
+      fe="$(yq -r '.tenant.frontend.enabled // "true"' "$f")"
+    else
+      fe="default-on"
+    fi
     echo "[OK] $base ($name / $env, frontend=$fe)"
   else
     fail=1
