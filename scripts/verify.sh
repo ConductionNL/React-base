@@ -39,6 +39,15 @@ echo "validate-values OK (hele vloot)"
 ./react-platform/scripts/smoke-checks.sh >/dev/null
 echo "smoke-checks OK"
 
+# Doc-assertion (docs-claims): deze repo bezit géén tenant-bestanden —
+# de docs beweren dat de bron Nextcloud-base is; bewaak die bewering.
+if compgen -G "react-platform/values/tenants/tenant-*.yaml" >/dev/null; then
+  echo "doc-assertion FAALT: tenant-bestanden gevonden in deze repo —" \
+       "de bron van waarheid is Nextcloud-base (docs/ADDING-TENANT.md)" >&2
+  exit 1
+fi
+echo "doc-assertion OK (geen eigen tenant-bestanden)"
+
 mapfile -t scripts < <(find scripts react-platform/scripts -name '*.sh' -type f | sort)
 shellcheck "${scripts[@]}"
 echo "shellcheck OK (${#scripts[@]} scripts)"

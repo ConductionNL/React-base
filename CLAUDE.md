@@ -132,3 +132,11 @@ If any of those become necessary later, prefer adding them via a new openspec ch
 - **Namespace must exist before first sync.** Frontend ApplicationSet does not create namespaces — Nextcloud-base does. If a frontend tenant exists without a Nextcloud co-tenant, create the namespace manually with `app.kubernetes.io/part-of: nextcloud-platform` label.
 - **Don't enable Cloudflare proxy** for any zone external-dns manages — it breaks cert-manager HTTP-01.
 - **NetworkPolicies select pods, not namespaces.** Don't relabel the namespace expecting policy changes to follow; they won't.
+
+## Agent-guardrails
+
+- Operatie-cataloog: `docs/agents.md` — **niet gecatalogiseerd = eerst
+  vragen**. Tenants leven in Nextcloud-base, niet hier.
+- Grondwaarheid: MCP `conduction-docs` (handboek) boven modelkennis.
+- Vóór afronden: `./scripts/verify.sh` groen; docs mee in dezelfde
+  wijziging. Push en cluster-mutaties doet een mens. Nooit `--no-verify`.
