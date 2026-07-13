@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Gewijzigd — 2026-07-13 (eigenaarschap → info@conduction.nl, review WP8)
+- Alle `owner:`-front-matter en CODEOWNERS omgezet van `mark` naar
+  `info@conduction.nl` (opvolging na 2026-08-31). Voorbereid op branch
+  `chore/wp8-ownership`; review, merge en push door een mens.
+
 ### Fixed
 - **2026-06-30 — theme env key must be GATSBY_-prefixed.** The generator emitted
   `NL_DESIGN_THEME_CLASSNAME`, but the Gatsby app only reads
