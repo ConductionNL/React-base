@@ -24,7 +24,7 @@ spec:
   project: default
 
   source:
-    repoURL: https://codeberg.org/Conduction/React-base.git
+    repoURL: https://github.com/ConductionNL/React-base.git
     # On main: the app-of-apps tracks HEAD (default branch). NB — moving to a
     # new revision needs a ONE-TIME live patch of this Application's
     # targetRevision, because it reads its own revision from the old one

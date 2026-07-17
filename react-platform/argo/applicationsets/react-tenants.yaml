@@ -35,7 +35,7 @@ spec:
     - git:
         # Source of truth = Nextcloud-base (lowercase `conduction` — Argo
         # matches repo URLs exactly; this is the URL the Nextcloud appset uses).
-        repoURL: "https://codeberg.org/conduction/Nextcloud-base.git"
+        repoURL: "https://github.com/ConductionNL/Nextcloud-base.git"
         revision: HEAD
         files:
           # FASE 2 (2026-07-06, akkoord mwest): elk Nextcloud-tenant-file levert
@@ -83,7 +83,7 @@ spec:
 
       sources:
         # Vendored woo-website chart in this repo (React-base).
-        - repoURL: "https://codeberg.org/Conduction/React-base.git"
+        - repoURL: "https://github.com/ConductionNL/React-base.git"
           # On main: chart-/values-source tracks HEAD; the generator
           # (Nextcloud-base) also tracks HEAD. Canary gating is the generator
           # glob (tenant-canary-*.yaml), not the revision.
@@ -216,7 +216,7 @@ spec:
                       {{- end }}
 
         # Values repo (this repo, React-base) — anchors $values references above.
-        - repoURL: "https://codeberg.org/Conduction/React-base.git"
+        - repoURL: "https://github.com/ConductionNL/React-base.git"
           targetRevision: HEAD
           ref: values
 
