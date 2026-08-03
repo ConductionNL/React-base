@@ -27,3 +27,15 @@ openspec/**/cluster-state.yaml
 
 # Local tool caches
 .kubeconform-cache/
+
+# Build artifacts — defensief. Deze repo is GitOps (Helm/Argo), geen
+# Node-project: er staat geen package.json in. Maar hij beschrijft React-
+# deployments, dus een lokale build hier is een kwestie van tijd, en de
+# globale policy eist deze regels vóór een commit op zo'n repo.
+node_modules/
+dist/
+build/
+.next/
+.docusaurus/
+coverage/
+*.tsbuildinfo

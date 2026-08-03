@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Gewijzigd — 2026-08-03 (Codeberg-refs in BOOTSTRAP naar GitHub)
+- `docs/BOOTSTRAP.md` noemde `codeberg.org/Conduction/React-base.git` als
+  vereiste én als `repoURL` in het Argo-repo-secret. De 143 live
+  react-platform-app-sources lezen `github.com/ConductionNL/React-base.git`;
+  wie het bootstrap-runbook volgde, zette dus een secret voor de verkeerde
+  remote. Omgezet naar GitHub.
+- **Niet aangeraakt:** `react-platform/argo/projects/react-platform.yaml`
+  whitelist `codeberg.org` nog in `sourceRepos`. Dat is een whitelist, geen
+  bron — hij hoort mee in de ronde waarin `tilburg-woo-ui` en
+  `woo-website-template-apiv2` migreren (29 apps lezen nog Codeberg).
+
 ### Gewijzigd — 2026-07-13 (eigenaarschap → info@conduction.nl, review WP8)
 - Alle `owner:`-front-matter en CODEOWNERS omgezet van `mark` naar
   `info@conduction.nl` (opvolging na 2026-08-31). Voorbereid op branch
