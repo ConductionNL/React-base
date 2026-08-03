@@ -15,7 +15,7 @@ kubectl-annotations).
 
 Vereist:
 - `kubectl`-context op de target-cluster (Argo CD draait in `argocd` ns)
-- Repo `https://codeberg.org/Conduction/React-base.git` is publiek bereikbaar
+- Repo `https://github.com/ConductionNL/React-base.git` is publiek bereikbaar
 
 ## Snelle weg: `./react-platform/scripts/bootstrap.sh`
 
@@ -48,7 +48,7 @@ metadata:
 type: Opaque
 stringData:
   type: git
-  url: https://codeberg.org/Conduction/React-base.git
+  url: https://github.com/ConductionNL/React-base.git
 EOF
 ```
 
