@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Gerepareerd — 2026-08-10 (`preserveResourcesOnDeletion` verkeerd uitgelegd; verwijderpad frontend)
+
+De comment boven `syncPolicy` in
+`react-platform/argo/applicationsets/react-tenants.yaml` zei *"Don't auto-delete
+tenant Applications when their tenant-\*.yaml is removed"*. Dat is onjuist. De
+vlag bewaart de **resources**; de Application `<tenant>-reactfront` wordt wél
+door de appset-controller verwijderd zodra de tenant uit de generator valt —
+door een verwijderd tenantbestand óf doordat de post-selector hem eruit filtert.
+Comment gecorrigeerd; **gedrag ongewijzigd**.
+
+Gevolg dat nergens stond: na verwijderen blijven Deployment, Service en Ingress
+draaien zonder Application, dus ook zonder `selfHeal`. De frontend **serveert
+verkeer door** op zijn publieke host tot iemand handmatig opruimt.
+
+`docs/ADDING-TENANT.md` §"Frontend uitzetten of tenant verwijderen":
+
+- Het pad **"alleen de frontend uit"** (`tenant.frontend.enabled: false`) werd
+  gepresenteerd alsof het daarmee klaar was. Het haalt de tenant uit de
+  post-selector, de Application verdwijnt, en de frontend blijft online — "uit"
+  dat gewoon verkeer serveert. Opruimstap toegevoegd.
+- Verwijst nu naar `Nextcloud-base/docs/REMOVING-TENANT.md` als canonieke
+  verwijderprocedure en naar `openwoo-app-config/scripts/cleanup-tenant.sh`
+  (plan-eerst) als gereedschap, in plaats van de procedure te herhalen.
+- Het opruimcommando gebruikte `-l react.platform/tenant=<org>`. Dat label
+  draagt de volledige `tenant.name` (bijv. `almere-accept`), niet de kale
+  organisatie — de selector matchte dus niets en liet precies staan wat hij zou
+  opruimen. Gecorrigeerd.
+
 ### Gewijzigd — 2026-07-13 (eigenaarschap → info@conduction.nl, review WP8)
 - Alle `owner:`-front-matter en CODEOWNERS omgezet van `mark` naar
   `info@conduction.nl` (opvolging na 2026-08-31). Voorbereid op branch

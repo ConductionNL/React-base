@@ -26,8 +26,15 @@ spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=default"]
 
-  # Don't auto-delete tenant Applications when their tenant-*.yaml is removed
-  # (manual cleanup forces operator review).
+  # Keep the RESOURCES when a tenant leaves the generator — NOT the Application.
+  # The Application `<tenant>-reactfront` IS deleted by the appset controller as
+  # soon as its tenant-*.yaml disappears (or the post-selector below drops it,
+  # e.g. frontend.enabled: false). What this flag preserves is everything that
+  # Application rolled out: Deployment, Service, Ingress. So after removal the
+  # frontend keeps serving traffic on its public host until an operator cleans
+  # up — that manual step is the point (forced review), but it is a step someone
+  # must actually take. See docs/ADDING-TENANT.md and, for the full removal
+  # procedure, Nextcloud-base docs/REMOVING-TENANT.md.
   syncPolicy:
     preserveResourcesOnDeletion: true
 
