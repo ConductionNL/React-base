@@ -1,0 +1,80 @@
+# SPDX-License-Identifier: EUPL-1.2
+#
+# Server-side gate op elke PR en elke push naar main.
+#
+# Zonder dit draait de docs-gate alleen bij wie `pre-commit install` heeft
+# gedaan. Een PR van iemand zonder hooks passeert dan ongecontroleerd, terwijl
+# die hooks juist de afspraak zijn dat docs meebewegen met de code.
+#
+# De workflow herimplementeert niets: hij draait dezelfde hooks uit
+# `.pre-commit-config.yaml`. Een tweede lijst met checks is een tweede lijst
+# die gaat afwijken.
+#
+# `--hook-stage pre-push` is niet optioneel: de `verify`-hook is als pre-push
+# gedeclareerd en draait zonder die vlag stilzwijgend niet, waarmee een groene
+# CI niets zou betekenen.
+#
+# LET OP: dit gate't wat een hook kán controleren — front-matter, index,
+# CODEOWNERS, uitvoerbare doc-blokken, de eigen verify. Niet of de prozatekst
+# nog klopt met de code; daar is de periodieke semantische review voor.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # `scripts/verify.sh` rendert de HELE vloot en heeft daarvoor de
+      # tenantbestanden van Nextcloud-base nodig. Lokaal staat die repo ernaast;
+      # in CI moet hij worden meegeleverd, anders faalt de hook met "geen
+      # Nextcloud-base tenants". Het pad gaat via TENANTS_DIR, want checkout
+      # mag niet buiten de workspace schrijven.
+      - uses: actions/checkout@v4
+        with:
+          repository: ConductionNL/Nextcloud-base
+          path: .tenants-src
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installeren wat de hooks nodig hebben
+        # uv: de docs-contract-hook van techbook shelt ernaar uit ("Python
+        # tooling via uv, never pip directly"); zonder uv faalt die hook.
+        run: |
+          python -m pip install --upgrade pip
+          pip install pre-commit uv
+
+      # kubeconform staat niet op de runner-image; helm, yq en shellcheck wel.
+      # `react-platform/scripts/smoke-checks.sh` eist hem en stopt er anders op.
+      # Versie én checksum gepind: een gate die bij een nieuwe upstream-release
+      # kan omvallen, of stilletjes een ander binair bestand draait, is geen gate.
+      - name: kubeconform installeren
+        env:
+          KUBECONFORM_VERSION: v0.8.0
+          KUBECONFORM_SHA256: 9bc2bffbf71f261128533edaf912153948b7ff238f9a531ae6d34466ec287883
+        run: |
+          set -euo pipefail
+          curl -sSfL -o /tmp/kubeconform.tar.gz \
+            "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz"
+          echo "${KUBECONFORM_SHA256}  /tmp/kubeconform.tar.gz" | sha256sum -c -
+          sudo tar -xzf /tmp/kubeconform.tar.gz -C /usr/local/bin kubeconform
+          kubeconform -v
+
+      - name: Dezelfde hooks als lokaal
+        env:
+          TENANTS_DIR: ${{ github.workspace }}/.tenants-src/nextcloud-platform/values/tenants
+        run: pre-commit run --all-files --show-diff-on-failure --hook-stage pre-push
