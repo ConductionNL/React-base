@@ -1,5 +1,5 @@
 ---
-last_reviewed: 2026-07-06
+last_reviewed: 2026-08-10
 owner: info@conduction.nl
 ---
 
@@ -56,14 +56,45 @@ de ApplicationSet af uit `tenant.name` + `tenant.environment` — zie
 
 ## Frontend uitzetten of tenant verwijderen
 
-- **Alleen de frontend uit**: zet `tenant.frontend.enabled: false` in het
-  Nextcloud-base tenant-bestand.
-- **Hele tenant weg**: verwijder het tenant-bestand in Nextcloud-base
-  (volg `REMOVING-TENANT.md` daar). Let op:
-  `preserveResourcesOnDeletion: true` — de frontend-Application en
-  resources blijven staan tot een operator ze bewust opruimt:
-  ```bash
-  kubectl delete application -n argocd <tenant.name>-reactfront
-  kubectl delete -n <tenant.name> -l react.platform/tenant=<org> all,ingress,networkpolicy,cert
-  ```
-  external-dns ruimt het Cloudflare-record op zodra de Ingress weg is.
+**Lees eerst wat `preserveResourcesOnDeletion: true` wél en niet doet.** De vlag
+bewaart de **resources**, niet de Application. Zodra een tenant uit de generator
+valt — het bestand weg, of de post-selector die hem eruit filtert — verwijdert
+de appset-controller de Application `<tenant.name>-reactfront`. Deployment,
+Service en Ingress blijven staan. Zonder Application is er ook geen `selfHeal`
+meer die ze bijstuurt: de frontend draait door, **serveert verkeer op zijn
+publieke host** en wordt door niets meer beheerd. Opruimen is altijd een
+handmatige stap.
+
+- **Alleen de frontend uit**: `tenant.frontend.enabled: false` in het
+  Nextcloud-base tenant-bestand haalt de tenant uit de post-selector
+  (`matchExpressions: tenant.frontend.enabled NotIn ["false"]`). De Application
+  verdwijnt — **maar de frontend blijft online**. "Uit" is het pas ná de
+  opruimstap hieronder. Ruim dus altijd op, anders staat er een frontend die
+  niemand meer bijwerkt.
+
+- **Hele tenant weg**: verwijder het tenant-bestand in Nextcloud-base. De
+  canonieke procedure staat in **`Nextcloud-base/docs/REMOVING-TENANT.md`**
+  (inclusief backup en de verplichte stap om de host uit de probe-lijsten te
+  halen). Dezelfde opruimstap geldt.
+
+### Opruimen
+
+Aanbevolen: `openwoo-app-config/scripts/cleanup-tenant.sh --tenant <tenant.name>`
+— zonder `--execute` toont het alleen een plan en verandert het niets. Het ruimt
+beide Applications (`nc-<tenant>` en `<tenant>-reactfront`) en de namespace op.
+
+Alleen de frontend, met de namespace intact:
+
+```bash
+TENANT=<tenant.name>
+
+kubectl delete application -n argocd "$TENANT-reactfront"
+kubectl delete -n "$TENANT" all,ingress,networkpolicy \
+  -l react.platform/tenant="$TENANT"
+```
+
+Let op het label: `react.platform/tenant` draagt de **volledige `tenant.name`**
+(bijv. `almere-accept`), niet de kale organisatie — zie `commonLabels` in de
+ApplicationSet. Een selector op `<org>` matcht niets en laat de frontend staan.
+
+external-dns ruimt het Cloudflare-record op zodra de Ingress weg is.
