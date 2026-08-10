@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Gerepareerd — 2026-08-10 (server-side gate viel om op ontbrekend gereedschap)
+- `.github/workflows/ci.yml`: `kubeconform` installeren, versie én sha256 gepind
+  (v0.8.0). `react-platform/scripts/smoke-checks.sh` eist hem en de runner-image
+  levert hem niet; `helm`, `yq` en `shellcheck` staan er wel op. Lokaal draaide
+  dezelfde gate al groen — het verschil zat uitsluitend in de runner.
+
 ### Gewijzigd — 2026-07-13 (eigenaarschap → info@conduction.nl, review WP8)
 - Alle `owner:`-front-matter en CODEOWNERS omgezet van `mark` naar
   `info@conduction.nl` (opvolging na 2026-08-31). Voorbereid op branch
