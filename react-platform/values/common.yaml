@@ -15,11 +15,17 @@
 # tenants testen. Digest:
 #   sha256:fb21855fd19fea835109c35237483c513f4fe417ed93e9b8b80e5e3d58e70ceb
 #
+# Per-tenant override: `tenant.frontend.registry` / `.repository` / `.tag` in
+# het tenant-bestand in Nextcloud-base. Sinds 2026-08-11 is zo'n pin BINDEND —
+# Argo reconcilieert de image dan, ook op een bestaande Deployment. Pint een
+# tenant niets, dan geldt deze default en blijft de image live bijstelbaar in
+# de Argo UI. Zie docs/ROLLOUTS.md § "Per-tenant image-pin".
+#
 # BELANGRIJK voor migratie van bestaande toolchain-tenants:
-# Per-tenant override `pwa.image.tag: latest` zetten tijdens cut-over,
-# zodat de tenant geen image-versie wisselt tegelijk met de namespace-move.
-# Pas in een aparte sync window verwijder je de override om naar de
-# platform-default te upgraden. Zie project memory en MIGRATION.md.
+# Per-tenant override `tag: latest` zetten tijdens cut-over, zodat de tenant
+# geen image-versie wisselt tegelijk met de namespace-move. Pas in een aparte
+# sync window verwijder je de override om naar de platform-default te
+# upgraden. Zie project memory en MIGRATION.md.
 pwa:
   image:
     image: docker.io/conduction2022/woo-website-v2

@@ -38,7 +38,9 @@ tenant:
   environment: accept
   frontend:
     enabled: true            # false = geen frontend (interne/test-tenants)
-    tag: "development-V1.0.260422"   # per-tenant image-pin
+    registry: "docker.io"    # optioneel; alleen samen met repository
+    repository: "conduction2022/woo-website-v2"   # optioneel, zonder host en zonder tag
+    tag: "V1.0.260422-development"                # alleen het tag-deel
     host: "woo.almere.nl"    # override van <org>.openwoo.app
     branding:
       organisationName: "Gemeente Almere"
@@ -53,6 +55,29 @@ tenant:
 Al het overige (hostname, upstream-API-URL, TLS-secret, namespace) leidt
 de ApplicationSet af uit `tenant.name` + `tenant.environment` — zie
 `react-platform/argo/applicationsets/react-tenants.yaml`.
+
+### Image-velden
+
+De image-reference bestaat uit drie losse velden; de ApplicationSet stelt er
+`<registry>/<repository>:<tag>` van samen. Laat je ze weg, dan geldt de
+platform-default uit `react-platform/values/common.yaml`.
+
+| Veld | Inhoud | Voorbeeld |
+|---|---|---|
+| `registry` | alleen de host, optioneel met poort | `docker.io`, `ghcr.io` |
+| `repository` | het pad, zonder host en zonder tag | `conduction2022/woo-website-v2` |
+| `tag` | alleen het tag-deel | `V1.0.260422-development` |
+
+Stop géén volledige reference in `tag`: `tag: "woo-website-v2:V1.0.260422-development"`
+rendert als `…/woo-website-v2:woo-website-v2:V1.0.260422-development` en is
+ongeldig. Nextcloud-base's `nextcloud-platform/scripts/validate-values.sh`
+weigert die vorm in CI. `registry` zonder `repository` is eveneens een fout —
+de ApplicationSet zou hem stil negeren.
+
+Pin je een van deze velden, dan wint git en reconcilieert Argo de image; pin je
+niets, dan blijft de image live bijstelbaar in de Argo UI. Hetzelfde geldt voor
+`branding` versus de `GATSBY_*`-env. Zie [ROLLOUTS.md](ROLLOUTS.md) §
+"Per-tenant image-pin: wie wint, git of de Argo UI?".
 
 ## Frontend uitzetten of tenant verwijderen
 

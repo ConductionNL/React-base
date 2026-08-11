@@ -31,6 +31,53 @@ spec:
   syncPolicy:
     preserveResourcesOnDeletion: true
 
+  # ignoreDifferences is PER TENANT voorwaardelijk, en dat kan niet in het template
+  # hieronder: met goTemplate: true rendert Argo alleen de stringvelden van de
+  # Application, niet de YAML-structuur, dus een {{- if }} rond een key werkt daar niet.
+  # templatePatch is één string die wél volledig getemplate wordt en daarna als
+  # merge-patch over de gegenereerde Application gaat. Let op: een merge-patch VERVANGT
+  # lijsten, dus dit blok is de enige vindplaats van ignoreDifferences.
+  #
+  # De regel: pint een tenant in git, dan wint git en reconcilieert Argo. Pint hij niet,
+  # dan blijft live bijstellen in de Argo UI mogelijk. Tot 2026-08-11 was de image
+  # altijd ignore-diffed, waardoor een tag die keurig in git stond nooit op een
+  # bestaande Deployment landde — Argo bleef Synced terwijl live iets anders draaide
+  # (epe-accept, 2026-08-11).
+  templatePatch: |
+    {{- $fe := default (dict) .tenant.frontend -}}
+    {{- $branding := index $fe "branding" -}}
+    {{- $pinned := or (index $fe "tag") (index $fe "repository") (index $fe "registry") -}}
+    spec:
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas
+          {{- /* Beide expressies kunnen wegvallen; dan moet de key jqPathExpressions zelf
+                 ook weg, want een lege lijst is ongeldig. De entry blijft geldig door de
+                 jsonPointers hierboven. */}}
+          {{- if or (not $branding) (not $pinned) }}
+          jqPathExpressions:
+            {{- if not $branding }}
+            {{- /* Branding/theme env (GATSBY_*, NL_DESIGN_*) is DEV-EDITABLE LIVE in Argo
+                   zolang de tenant GEEN frontend.branding-blok heeft. UPSTREAM_HOST en
+                   UPSTREAM_BASE zijn nooit gematcht en blijven altijd git-managed.
+                   Trade-off: live edits zijn ongeaudit, ongereviewd, en weg zodra de
+                   Deployment opnieuw wordt aangemaakt. */}}
+            - '.spec.template.spec.containers[].env[] | select(.name | test("^(GATSBY_|NL_DESIGN_)"))'
+            {{- end }}
+            {{- if not $pinned }}
+            {{- /* Container image is DEV-EDITABLE LIVE in Argo zolang de tenant niets pint
+                   (self-service tag-bumps zonder git push). Zet frontend.tag,
+                   frontend.repository of frontend.registry en git wint. */}}
+            - '.spec.template.spec.containers[].image'
+            {{- end }}
+          {{- end }}
+        - group: autoscaling
+          kind: HorizontalPodAutoscaler
+          jsonPointers:
+            - /status
+
   generators:
     - git:
         # Source of truth = Nextcloud-base (lowercase `conduction` — Argo
@@ -104,13 +151,33 @@ spec:
               {{- $fe := default (dict) .tenant.frontend -}}
               {{- $branding := default (dict) (index $fe "branding") -}}
               {{- /* NL Design theme classname. Baseline default "conduction-theme" (it exists in
-                     the bundled themes, so it renders out of the box). DEVS adjust this LIVE in
-                     Argo per gemeente — the GATSBY_ and NL_DESIGN_ env is ignore-diffed (see
-                     ignoreDifferences + RespectIgnoreDifferences below), so this git value is only
-                     the initial baseline. frontend.branding.themeClassname overrides the baseline. */ -}}
+                     the bundled themes, so it renders out of the box). Zonder frontend.branding-blok
+                     is de GATSBY_/NL_DESIGN_ env ignore-diffed (zie ignoreDifferences onderaan) en is
+                     deze waarde alleen de startwaarde die devs daarna LIVE in Argo bijstellen. MET een
+                     branding-blok wint git en reconcilieert Argo de env.
+                     frontend.branding.themeClassname overrides the baseline. */ -}}
               {{- $theme := default "conduction-theme" (index $branding "themeClassname") -}}
               {{- $extraEnv := default (dict) (index $fe "env") -}}
+              {{- /* Image-reference per tenant, in drie losse velden. De chart bouwt
+                     "<pwa.image.image>:<pwa.image.tag>", dus stellen we hier het image-deel samen:
+                       frontend.registry   host (+poort), bv. "docker.io" — alleen zinvol mét repository
+                       frontend.repository pad zonder host en zonder tag, bv. "conduction2022/woo-website-v2"
+                       frontend.tag        alleen het tag-deel, bv. "V1.0.260422-development"
+                     Drie velden i.p.v. één, zodat een provisioningportal geen volledige reference in
+                     het tag-veld kan proppen — dat rendert als "…/woo-website-v2:woo-website-v2:<tag>"
+                     en is ongeldig (gebeurd op epe-accept, 2026-08-11). Nextcloud-base's
+                     validate-values.sh weigert die vorm nu in CI. */ -}}
               {{- $tag := index $fe "tag" -}}
+              {{- $registry := index $fe "registry" -}}
+              {{- $repository := index $fe "repository" -}}
+              {{- $image := "" -}}
+              {{- if $repository -}}
+              {{-   if $registry -}}
+              {{-     $image = printf "%s/%s" $registry $repository -}}
+              {{-   else -}}
+              {{-     $image = $repository -}}
+              {{-   end -}}
+              {{- end -}}
               {{- /* Per-tenant TLS override for custom-domain frontends (NOT covered by the
                      *.openwoo.app wildcard). Default = wildcard-openwoo-tls, no issuer annotation.
                      Set frontend.tls.secretName + frontend.tls.issuer:
@@ -156,11 +223,19 @@ spec:
                 # ingress.annotations hieronder.
                 tls: false
               pwa:
-                {{- with $tag }}
-                # Per-tenant image-pin (tenant.frontend.tag). Lost de "iffy tags"
-                # tijdens migratie op: migreer op de huidige tag, bump later bewust.
+                {{- if or $tag $image }}
+                # Per-tenant image-pin (tenant.frontend.registry/repository/tag).
+                # Een pin hier is bindend: Argo reconcilieert de image dan wél
+                # (zie ignoreDifferences onderaan — die wordt voor deze tenant
+                # niet geëmit). Zonder pin geldt de platform-default uit
+                # values/common.yaml en blijft live bijstellen in Argo mogelijk.
                 image:
+                  {{- with $image }}
+                  image: "{{ . }}"
+                  {{- end }}
+                  {{- with $tag }}
                   tag: "{{ . }}"
+                  {{- end }}
                 {{- end }}
                 upstream:
                   host: "{{ $upstreamHost }}"
@@ -246,23 +321,7 @@ spec:
 
       revisionHistoryLimit: 10
 
-      ignoreDifferences:
-        - group: apps
-          kind: Deployment
-          jsonPointers:
-            - /spec/replicas
-          # Branding/theme env (GATSBY_*, NL_DESIGN_*) is DEV-EDITABLE LIVE in Argo —
-          # deliberately NOT GitOps. selfHeal won't revert it, and (with
-          # RespectIgnoreDifferences) a sync won't clobber it. UPSTREAM_HOST/UPSTREAM_BASE
-          # are NOT matched, so they stay git-managed. Trade-off: live edits are
-          # unaudited, unreviewed, and lost if the Deployment is recreated.
-          jqPathExpressions:
-            - '.spec.template.spec.containers[].env[] | select(.name | test("^(GATSBY_|NL_DESIGN_)"))'
-            # Container image (registry+tag) is DEV-EDITABLE LIVE in Argo too (self-service
-            # tag bumps without a git push). frontend.tag in the tenant file is then only the
-            # INITIAL value on a fresh deploy; live edits stick and are not reverted.
-            - '.spec.template.spec.containers[].image'
-        - group: autoscaling
-          kind: HorizontalPodAutoscaler
-          jsonPointers:
-            - /status
+      # ignoreDifferences staat NIET hier maar in spec.templatePatch bovenaan: het is
+      # per tenant voorwaardelijk, en met goTemplate rendert Argo alleen stringvelden —
+      # een {{- if }} rond een YAML-key kan hier dus niet. templatePatch is één string
+      # en wordt wél volledig getemplate. Eén vindplaats, geen duplicaat.

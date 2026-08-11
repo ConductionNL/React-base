@@ -6,6 +6,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Toegevoegd — 2026-08-11 (per-tenant registry/repository)
+- `react-platform/argo/applicationsets/react-tenants.yaml` — `tenant.frontend`
+  accepteert nu `registry` en `repository` naast `tag`. De ApplicationSet stelt
+  daaruit `<registry>/<repository>:<tag>` samen en levert dat als
+  `pwa.image.image` / `pwa.image.tag`. Geen chart-wijziging nodig.
+
+  Drie losse velden i.p.v. één, zodat een provisioningportal geen volledige
+  reference in het tag-veld kan proppen. Dat gebeurde op 2026-08-11 bij
+  `epe-accept`: `tag: "woo-website-v2:V1.0.260422-development"` rendert als
+  `…/woo-website-v2:woo-website-v2:<tag>` en is ongeldig. Nextcloud-base's
+  `validate-values.sh` weigert die vorm nu in CI.
+
+### Gewijzigd — 2026-08-11 (image-pin is bindend)
+- `react-tenants.yaml` — `ignoreDifferences` is verhuisd naar
+  `spec.templatePatch` en is nu per tenant voorwaardelijk:
+  - pint een tenant `frontend.registry`/`.repository`/`.tag`, dan wordt de
+    image-expressie niet geëmit en reconcilieert Argo de image;
+  - heeft een tenant een `frontend.branding`-blok, dan wordt de
+    `^(GATSBY_|NL_DESIGN_)`-expressie niet geëmit en reconcilieert Argo de
+    branding-env;
+  - pint een tenant niets, dan is het gedrag ongewijzigd: live bijstellen in
+    de Argo UI blijft mogelijk.
+
+  Waarom via `templatePatch`: met `goTemplate: true` rendert Argo alleen de
+  stringvelden van de Application, niet de YAML-structuur — een `{{- if }}` rond
+  een key werkt daar niet. `templatePatch` is één string die wél volledig
+  getemplate wordt. Let op: een merge-patch vervangt lijsten, dus dat blok is de
+  enige vindplaats van `ignoreDifferences`.
+
+  Aanleiding: sinds `5029041` (2026-07-01) was de image altijd ignore-diffed
+  voor live self-service tag-bumps. Gevolg was dat een tag die keurig in git
+  stond nooit op een bestaande Deployment landde — Argo bleef Synced/Healthy
+  terwijl live iets anders draaide. Vastgesteld op `epe-accept` (2026-08-11):
+  de Application dróég `pwa.image.tag`, maar de live image bleef de
+  platform-default; de goede stand was met de hand gezet via de Argo UI
+  (`managedFields` toonde `argocd-server`). Hetzelfde gold voor branding: de
+  favicon uit git (`image/png`) stond live als `image/x-icon`.
+
+  Impact: tenants die al een `frontend.tag` in git hadden, kunnen daarvan zijn
+  afgeweken. Vóór uitrol is de drift in Nextcloud-base uitgelijnd (git volgt
+  live) — zie zijn CHANGELOG van dezelfde datum. Rol deze wijziging niet uit
+  zonder die uitlijning.
+
 ### Gewijzigd — 2026-07-13 (eigenaarschap → info@conduction.nl, review WP8)
 - Alle `owner:`-front-matter en CODEOWNERS omgezet van `mark` naar
   `info@conduction.nl` (opvolging na 2026-08-31). Voorbereid op branch

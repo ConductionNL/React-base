@@ -58,6 +58,34 @@ zoals in de oude losse manifests — die directive werd door de chart
 genegeerd, geen functional change). Kortdurend overlap van oude + nieuwe
 pod tijdens elke tenant-update.
 
+## Per-tenant image-pin: wie wint, git of de Argo UI?
+
+Een tenant kan de platform-default overrulen met `tenant.frontend.registry`,
+`tenant.frontend.repository` en `tenant.frontend.tag` in zijn tenant-bestand
+in Nextcloud-base. Elk deel heeft zijn eigen veld; de ApplicationSet stelt er
+`<registry>/<repository>:<tag>` van samen.
+
+De eigenaarsregel hangt af van of de tenant pint:
+
+| Tenant-bestand | Image | Branding (`GATSBY_*`) |
+|---|---|---|
+| geen pin, geen `branding`-blok | live bijstellen in Argo blijft staan | live bijstellen blijft staan |
+| pint `registry`/`repository`/`tag` | **git wint**, Argo reconcilieert | ongewijzigd |
+| heeft een `branding`-blok | ongewijzigd | **git wint**, Argo reconcilieert |
+
+De ApplicationSet emit `ignoreDifferences` daarom per tenant verschillend, via
+`spec.templatePatch` in `react-platform/argo/applicationsets/react-tenants.yaml`.
+
+Let op bij het toevoegen van een pin of een `branding`-blok aan een tenant die
+tot dan toe live werd bijgesteld: vanaf dat moment overschrijft git de live
+waarde. Controleer dus eerst wat er live draait (`kubectl -n <tenant> get deploy
+woo-website -o jsonpath='{.spec.template.spec.containers[0].image}'`) en zet die
+waarde in git, tenzij je bewust wilt wisselen.
+
+Achtergrond: tot 2026-08-11 was de image altijd ignore-diffed. Een tag die
+keurig in git stond landde daardoor nooit op een bestaande Deployment — Argo
+bleef Synced terwijl live iets anders draaide (epe-accept, 2026-08-11).
+
 ## Wave-volgorde
 
 Tenants kunnen `tenant.wave` zetten (default `"1"`). De ApplicationSet
