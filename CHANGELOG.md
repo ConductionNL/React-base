@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### 2026-08-03 — pre-commit-hookbron naar GitHub
+- `.pre-commit-config.yaml`: de techbook-hook komt van
+  `github.com/ConductionNL/techbook` in plaats van `codeberg.org`.
+- Aangevuld op 2026-08-11: de pin gaat in dezelfde beweging van commit
+  `edf269ee…` naar tag **`v0.2.0`** en de hook `docs-touched` komt erbij.
+  Zonder die stap bleef deze repo achter op `monitoring`, `Nextcloud-base`,
+  `openwoo-app-config` en `cluster-infra`, die alle vier al op `v0.2.0` zitten of
+  daarheen gaan. Alle zes hooks zijn groen over de hele repo.
+- Waarom: dit was de laatste harde Codeberg-afhankelijkheid buiten talos.
+  Zolang die bestond moest `techbook` naar twee forges gepusht blijven
+  worden, en dat is niet volgehouden — 7 van de 9 repos zijn daar uit
+  elkaar gelopen. De bron van het patroon zat in
+  `techbook/scripts/rollout_precommit_hook.sh`, dat deze URL in élke repo
+  schreef; die is in dezelfde ronde omgezet.
+
 ### Gewijzigd — 2026-07-13 (eigenaarschap → info@conduction.nl, review WP8)
 - Alle `owner:`-front-matter en CODEOWNERS omgezet van `mark` naar
   `info@conduction.nl` (opvolging na 2026-08-31). Voorbereid op branch
