@@ -79,6 +79,52 @@ niets, dan blijft de image live bijstelbaar in de Argo UI. Hetzelfde geldt voor
 `branding` versus de `GATSBY_*`-env. Zie [ROLLOUTS.md](ROLLOUTS.md) §
 "Per-tenant image-pin: wie wint, git of de Argo UI?".
 
+### TLS-velden
+
+Standaard heeft een frontend **geen** `tls`-blok nodig: hosts onder
+`*.openwoo.app` en `*.accept.openwoo.app` vallen onder het gedeelde
+wildcard-cert `wildcard-openwoo-tls`, dat cluster-infra uitgeeft (DNS-01) en dat
+reflector in elke tenant-namespace kopieert. Nul uitgifte per tenant.
+
+Een tenant op een eigen domein heeft dat wildcard niet en zet daarom
+`frontend.tls`. Er zijn twee takken:
+
+| `issuer` | Wat de ApplicationSet doet | Wanneer |
+|---|---|---|
+| een cluster-issuer, bv. `letsencrypt-prod` | zet `cert-manager.io/cluster-issuer` op de Ingress → cert-manager geeft een cert per host uit | eigen domein, wij regelen het cert |
+| `none` | **géén** annotatie, dus géén Certificate-object en géén uitgifte — de Ingress verwijst naar een secret dat er al staat | klant levert het cert (gekocht of intern uitgegeven) |
+
+Zet `frontend.tls` altijd samen met `frontend.host`; een eigen secret op een
+`*.openwoo.app`-host is zinloos werk.
+
+#### `issuer: none` — het secret zelf zaaien
+
+Bij `none` bestaat het secret niet vanzelf. Zaai het vóórdat je de
+tenant-wijziging pusht, anders serveert de Ingress even geen bruikbaar cert:
+
+    kubectl -n <tenant> create secret tls <secretName> \
+      --cert=<pad>/fullchain.pem --key=<pad>/privkey.pem
+
+Belangrijk om te weten over deze tak:
+
+- **Het secret staat niet in git.** Het is de enige plek in de frontend-keten
+  waar de werkelijkheid niet uit de repo volgt. Raakt de namespace kwijt, dan is
+  het cert kwijt — opnieuw zaaien is de enige herstelweg.
+- **Niets bewaakt de vervaldatum.** Cert-manager kijkt niet naar dit secret,
+  dus er is geen automatische vernieuwing en geen alert. Zet de vervaldatum in
+  de agenda. Voorbeeld in gebruik: `roosendaal-prod` draait op een gekocht
+  certSIGN-cert dat op 18 oktober 2026 verloopt.
+- **Vervangen doe je met dezelfde naam**; de Ingress hoeft niet mee te
+  veranderen. `kubectl -n <tenant> create secret tls <naam> --cert=… --key=… \
+  --dry-run=client -o yaml | kubectl apply -f -` vervangt de inhoud in plaats van
+  te falen op "already exists".
+
+Controleren wat er werkelijk geserveerd wordt (en niet alleen wat in het secret
+zit):
+
+    echo | openssl s_client -connect <host>:443 -servername <host> 2>/dev/null \
+      | openssl x509 -noout -subject -issuer -dates
+
 ## Frontend uitzetten of tenant verwijderen
 
 - **Alleen de frontend uit**: zet `tenant.frontend.enabled: false` in het
