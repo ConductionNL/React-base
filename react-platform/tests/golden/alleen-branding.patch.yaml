@@ -1,0 +1,13 @@
+spec:
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+      jqPathExpressions:
+        - '.spec.template.spec.containers[].image'
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler
+      jsonPointers:
+        - /status
+

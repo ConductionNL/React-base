@@ -48,7 +48,18 @@ if compgen -G "react-platform/values/tenants/tenant-*.yaml" >/dev/null; then
 fi
 echo "doc-assertion OK (geen eigen tenant-bestanden)"
 
-mapfile -t scripts < <(find scripts react-platform/scripts -name '*.sh' -type f | sort)
+# Golden-file-tests voor de react-tenants ApplicationSet-templates. Die templates
+# zijn strings in YAML, dus geen linter ziet wat ze rénderen; zonder deze stap
+# blijkt een fout pas op het cluster. Vereist go — sla over als dat ontbreekt,
+# maar meld dat, anders lijkt een onvolledige verify groen.
+if command -v go >/dev/null; then
+  ./react-platform/tests/run-tests.sh >/dev/null
+  echo "render-tests OK"
+else
+  echo "render-tests OVERGESLAGEN (go ontbreekt) — installeer go voor volledige verify" >&2
+fi
+
+mapfile -t scripts < <(find scripts react-platform/scripts react-platform/tests -name '*.sh' -type f | sort)
 shellcheck "${scripts[@]}"
 echo "shellcheck OK (${#scripts[@]} scripts)"
 

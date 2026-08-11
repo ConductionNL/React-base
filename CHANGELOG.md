@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Toegevoegd — 2026-08-11 (render-tests voor de ApplicationSet)
+- `react-platform/tests/` — golden-file-tests voor de twee Go-templates in de
+  `react-tenants` ApplicationSet (`helm.values` en `templatePatch`). Beide zijn
+  strings in YAML, dus geen enkele linter zag wat ze rénderen; een fout bleek
+  pas op het cluster. Zeven tenant-vormen (geen frontend, alleen tag, alleen
+  branding, gepind + branding, BYO-TLS, cert-manager-issuer, extraHosts) × twee
+  templates = 14 vergelijkingen. Elke gerenderde uitvoer gaat ook door `yq`, dus
+  een template die ongeldige YAML oplevert faalt hier en niet pas bij Argo.
+
+  `scripts/verify.sh` draait de suite mee wanneer `go` beschikbaar is, en meldt
+  het expliciet als hij overslaat — een onvolledige verify mag niet groen lijken.
+
+  Mutatietest gedaan: de `$pinned`-conditie omdraaien laat 6 vergelijkingen
+  roodslaan, de registry niet meer samenstellen 1.
+
+  BEPERKING: `tests/render/main.go` benadert Argo's engine (Go text/template met
+  `missingkey=default` en een handvol nagebouwde sprig-functies). Het bewijst dat
+  de templatelogica doet wat we bedoelen, niet dat Argo byte-identiek hetzelfde
+  doet. Gebruikt de template een sprig-functie die het harnas niet kent, dan
+  faalt het parsen luidruchtig — geen stille divergentie.
+
 ### Toegevoegd — 2026-08-11 (per-tenant registry/repository)
 - `react-platform/argo/applicationsets/react-tenants.yaml` — `tenant.frontend`
   accepteert nu `registry` en `repository` naast `tag`. De ApplicationSet stelt

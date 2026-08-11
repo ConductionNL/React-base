@@ -1,0 +1,1 @@
+{"tenant":{"name":"buren-accept","environment":"accept","frontend":{"host":"open.buren.nl","tls":{"secretName":"open-buren-nl-tls","issuer":"letsencrypt-dns"}}}}

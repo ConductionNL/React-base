@@ -1,0 +1,36 @@
+commonLabels:
+  app.kubernetes.io/part-of: react-platform
+  react.platform/tenant: "canary-accept"
+  react.platform/environment: "accept"
+global:
+  domain: "canary.accept.openwoo.app"
+  # tls: false — anders maakt de chart een eigen extra
+  # TLS-block + cert (`woo-website-frontend-tls`) bovenop
+  # onze `ingress.tls` met de `<name>-tls` convention.
+  # Resultaat: 2 certs, dubbele issuance bij Let's Encrypt.
+  # Wij leveren cert-manager.io/cluster-issuer zelf via
+  # ingress.annotations hieronder.
+  tls: false
+pwa:
+  upstream:
+    host: "canary.accept.commonground.nu"
+    base: "https://canary.accept.commonground.nu/apps/opencatalogi/api"
+  env:
+    # NL Design theme — ALWAYS emitted; baseline conduction-theme, dev-editable LIVE (ignore-diff).
+    # Key MUST be GATSBY_-prefixed: the Gatsby app only reads GATSBY_NL_DESIGN_THEME_CLASSNAME
+    # client-side (verified in the JS bundle). The un-prefixed key is ignored by the app.
+    GATSBY_NL_DESIGN_THEME_CLASSNAME: "conduction-theme"
+ingress:
+  # TLS: default = shared wildcard (wildcard-openwoo-tls, reflected into this
+  # namespace by reflector; NO issuer annotation → zero per-tenant issuance).
+  # Custom-domain tenants (not under *.openwoo.app) set frontend.tls to get their
+  # own cert: issuer != "none" adds cert-manager.io/cluster-issuer for a per-host
+  # cert; issuer "none" references a pre-seeded/BYO secret with no annotation.
+  # Geen `hosts:`-entry voor de primaire host — de chart maakt al een rule
+  # op `global.domain`; een tweede via `ingress.hosts` zou dubbel zijn.
+  # Alleen frontend.extraHosts komen hier als extra rules bij.
+  tls:
+    - secretName: "wildcard-openwoo-tls"
+      hosts:
+        - "canary.accept.openwoo.app"
+

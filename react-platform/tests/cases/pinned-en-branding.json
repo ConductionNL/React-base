@@ -1,0 +1,1 @@
+{"tenant":{"name":"epe-accept","environment":"accept","frontend":{"registry":"docker.io","repository":"conduction2022/woo-website-v2","tag":"V1.0.260519-development","branding":{"organisationName":"gemeente Epe","themeClassname":"epe-theme","jumbotronImageUrl":"https://example.invalid/j.jpg"}}}}
