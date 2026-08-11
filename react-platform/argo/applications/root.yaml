@@ -15,6 +15,14 @@ metadata:
   labels:
     app.kubernetes.io/part-of: react-platform
     react.platform/component: root
+  annotations:
+    # Hoort bij ServerSideApply onderaan: server-side apply schrijft geen
+    # kubectl.kubernetes.io/last-applied-configuration, en daar leunt Argo's
+    # standaard-diff op. Zonder deze optie kan Argo `Synced` melden terwijl live
+    # iets anders staat, en slaat automated sync daar dus ook niet op aan.
+    # Vastgesteld op 2026-08-11 bij de OLM-app in ConductionNL/KeyCloak: die
+    # stond maanden `Synced` terwijl twee Deployments nooit waren toegepast.
+    argocd.argoproj.io/compare-options: ServerSideDiff=true
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
