@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Gewijzigd — 2026-08-11 (ServerSideDiff op de root-Application)
+- `react-platform/argo/applications/root.yaml` — annotatie
+  `argocd.argoproj.io/compare-options: ServerSideDiff=true` toegevoegd naast de
+  bestaande `ServerSideApply=true`.
+
+  Waarom: server-side apply schrijft geen
+  `kubectl.kubernetes.io/last-applied-configuration`, en daar leunt Argo's
+  standaard-diff op. Zonder deze optie kan Argo `Synced` melden terwijl live iets
+  anders staat, en slaat automated sync daar dus ook niet op aan. Vastgesteld op
+  2026-08-11 bij de OLM-app in `ConductionNL/KeyCloak`: die stond maanden
+  `Synced` terwijl twee Deployments nooit waren toegepast en een CSV een andere
+  versie had.
+
+  Cluster-breed hadden 15 van de 248 apps `ServerSideApply=true` en had er één de
+  `ServerSideDiff`-annotatie. Dit is fase 1 van een gefaseerde uitrol; deze app
+  beheert drie Argo-objecten (AppProject, ApplicationSet, zichzelf), dus de
+  blast radius is klein. Let er bij de eerste sync na de merge op of Argo iets
+  bijtrekt dat eerder onzichtbaar bleef.
+
 ### Toegevoegd — 2026-08-11 (render-tests voor de ApplicationSet)
 - `react-platform/tests/` — golden-file-tests voor de twee Go-templates in de
   `react-tenants` ApplicationSet (`helm.values` en `templatePatch`). Beide zijn
