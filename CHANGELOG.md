@@ -8,10 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### 2026-08-03 — pre-commit-hookbron naar GitHub
 - `.pre-commit-config.yaml`: de techbook-hook komt van
-  `github.com/ConductionNL/techbook` in plaats van `codeberg.org`. De pin
-  `edf269ee…` blijft ongewijzigd: die commit bestaat op beide forges en is
-  daar voorouder van `main`. Host-only dus — de gates (`docs-contract`,
-  `docs-claims`) gedragen zich identiek.
+  `github.com/ConductionNL/techbook` in plaats van `codeberg.org`.
+- Aangevuld op 2026-08-11: de pin gaat in dezelfde beweging van commit
+  `edf269ee…` naar tag **`v0.2.0`** en de hook `docs-touched` komt erbij.
+  Zonder die stap bleef deze repo achter op `monitoring`, `Nextcloud-base`,
+  `openwoo-app-config` en `cluster-infra`, die alle vier al op `v0.2.0` zitten of
+  daarheen gaan. Alle zes hooks zijn groen over de hele repo.
 - Waarom: dit was de laatste harde Codeberg-afhankelijkheid buiten talos.
   Zolang die bestond moest `techbook` naar twee forges gepusht blijven
   worden, en dat is niet volgehouden — 7 van de 9 repos zijn daar uit
