@@ -6,6 +6,58 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Gewijzigd — 2026-08-12 (platform-default naar ghcr.io)
+- `react-platform/values/common.yaml` — `pwa.image.image` van
+  `docker.io/conduction2022/woo-website-v2` naar
+  `ghcr.io/conductionnl/woo-website-v2`, en `pwa.image.tag` van
+  `V1.0.260422-development` naar `v1.0.0`. Elke nieuwe WOO PWA-frontend landt
+  daarmee op ghcr.io zonder per-tenant pin.
+
+  Waarom: het Docker Pro-PAT is op 2026-08-03 verlopen en wordt niet vernieuwd,
+  dus de vloot pullt daar weer anoniem onder de limiet van 100 pulls per 6 uur
+  per IP — één node-restart trekt tientallen images tegelijk. ghcr.io kent die
+  limiet niet voor publieke images en vraagt geen pull-secret (er is er ook geen
+  geconfigureerd). Zie `cluster-config/docs/mirror.md`.
+
+  Het commentaarblok erboven is meegegaan: de "huidige pin" noemde
+  `development-V1.0.260422` terwijl de waarde `V1.0.260422-development` was
+  (omgedraaid), en de gedocumenteerde digest was verouderd. De nieuwe digest
+  (`sha256:945b3d05…`) staat er nu bij mét de aantekening dat hij informatief is
+  — niets dwingt hem af, de Deployment pullt op tag.
+
+- `react-platform/scripts/smoke-checks.sh` — leest nu ook
+  `tenant.frontend.registry` en `.repository` en stelt daar `pwa.image.image`
+  van samen, volgens dezelfde regels als `react-tenants.yaml:170-180`
+  (registry alleen zinvol mét repository).
+
+  Waarom: het script reproduceerde alleen `tag`. De drie tenants die al op ghcr
+  stonden renderden daardoor verkeerd in de lokale fleet-render — het
+  verificatiepad was blind voor precies het veld dat deze wijziging gebruikt.
+
+- `docs/ADDING-TENANT.md` — voorbeelden en de veldtabel staan op ghcr.io; de
+  nieuwe default is expliciet benoemd, met de waarschuwing dat een tenant die
+  alléén een `tag` pint het image-pad uit `common.yaml` erft.
+- `docs/ROLLOUTS.md` § "Image-tag bumpen" — de claim dat een bump doorwerkt op
+  *alle* tenants gecorrigeerd (tenants zonder pin zijn image-ignore-diffed
+  sinds 2026-08-11), plus een nieuwe paragraaf "Registry wisselen".
+
+  Voorwaarde bij deze wijziging: de 23 tenants die alléén een `tag` pinnen
+  erven het image-pad uit `common.yaml`, dus zij zouden meeverhuizen naar
+  ghcr. Hun tags bestaan daar niet 1-op-1 — `V1.0.260422-development` heet op
+  ghcr omgedraaid `development-V1.0.260422`, en `1.0.0` bestaat er niet. Die 23
+  hebben in Nextcloud-base daarom eerst een expliciete
+  `registry: docker.io` + `repository: conduction2022/woo-website-v2` gekregen
+  (nul-diff tegen live). **Landt die commit niet vóór deze, dan stallen 10
+  tenants in ImagePullBackOff.**
+
+  Geverifieerd op 2026-08-12: alle 26 gepinde tenants renderen exact de image
+  die live draait (0 afwijkingen), `./scripts/verify.sh` groen, geen golden file
+  gewijzigd, en een tenant zonder pin rendert
+  `ghcr.io/conductionnl/woo-website-v2:v1.0.0` in beide omgevingen.
+
+  Openstaand: de migratie van de 23 legacy Docker Hub-tenants naar ghcr is
+  bewust *niet* meegenomen — gefaseerd, canary eerst, 24u soak.
+
 ### Gewijzigd — 2026-08-11 (ServerSideDiff op de root-Application)
 - `react-platform/argo/applications/root.yaml` — annotatie
   `argocd.argoproj.io/compare-options: ServerSideDiff=true` toegevoegd naast de

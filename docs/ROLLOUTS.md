@@ -44,14 +44,30 @@ Alles in het tenant-bestand in **Nextcloud-base**
 
 ## Image-tag bumpen
 
-Image-tags zijn pinned in `values/common.yaml`. Een bump werkt door op
-**alle** tenants in **alle** omgevingen tegelijkertijd via Argo's auto-sync.
+De platform-default staat in `values/common.yaml` en is sinds 2026-08-12
+`ghcr.io/conductionnl/woo-website-v2:v1.0.0`. Een bump raakt **elke nieuwe
+Deployment** plus elke tenant die géén `registry`/`repository` pint maar wél een
+`tag` — die erft namelijk het image-pad uit `common.yaml`.
+
+Een bump raakt **niet** de live image van tenants die niets pinnen: die is
+ignore-diffed (zie de volgende paragraaf), dus Argo corrigeert hem niet.
 
 Procedure:
 1. Update `pwa.image.tag` in `values/common.yaml` (PR).
-2. Wacht op een 17:00 sync window.
-3. Argo synct alle Applications. Wave 0 (canary) eerst, dan wave 1+.
-4. Verifieer canary werkt voordat wave 1 doorrolt.
+2. Controleer dat de nieuwe tag ook bestaat voor de tenants die alleen een tag
+   pinnen — de tagnamen op ghcr.io en Docker Hub lopen niet gelijk. Bestaat hij
+   niet, dan stalt die tenant in ImagePullBackOff (RollingUpdate houdt de oude
+   pods in de lucht, dus geen storing, maar de rollout hangt).
+3. Wacht op een 17:00 sync window.
+4. Argo synct alle Applications. Wave 0 (canary) eerst, dan wave 1+.
+5. Verifieer canary werkt voordat wave 1 doorrolt.
+
+### Registry wisselen
+
+Een registry-wissel in `common.yaml` verhuist ook de tenants mee die alleen een
+`tag` pinnen. Geef die tenants daarom eerst een expliciete `registry` +
+`repository` (nul-diff: dat is wat ze al pullen), en wissel pas daarna de
+default. Zo ging het op 2026-08-12 bij de overgang naar ghcr.io.
 
 Rolling update: chart-default is RollingUpdate (geen `strategy: Recreate`
 zoals in de oude losse manifests — die directive werd door de chart

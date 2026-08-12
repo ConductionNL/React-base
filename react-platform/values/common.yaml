@@ -11,9 +11,15 @@
 # is a platform-wide change en valt onder de AppProject sync window
 # (see argo/projects/react-platform.yaml).
 #
-# Huidige pin: `development-V1.0.260422` — versie die we via de canary
-# tenants testen. Digest:
-#   sha256:fb21855fd19fea835109c35237483c513f4fe417ed93e9b8b80e5e3d58e70ceb
+# Huidige pin: `v1.0.0` op ghcr.io. Digest (informatief — niets dwingt hem af,
+# de Deployment pullt op tag):
+#   sha256:945b3d0510d8d7c3cc2fbc078c06de9bc6382611728c062c26c84043222b732f
+#
+# Waarom ghcr.io en niet Docker Hub: het Docker Pro-PAT is op 2026-08-03
+# verlopen en wordt niet vernieuwd, dus de vloot pullt daar weer anoniem onder
+# de limiet van 100 pulls per 6 uur per IP. ghcr.io kent die limiet niet voor
+# publieke images en vraagt geen pull-secret in de namespace (er is er ook geen
+# geconfigureerd). Zie cluster-config/docs/mirror.md.
 #
 # Per-tenant override: `tenant.frontend.registry` / `.repository` / `.tag` in
 # het tenant-bestand in Nextcloud-base. Sinds 2026-08-11 is zo'n pin BINDEND —
@@ -21,16 +27,20 @@
 # tenant niets, dan geldt deze default en blijft de image live bijstelbaar in
 # de Argo UI. Zie docs/ROLLOUTS.md § "Per-tenant image-pin".
 #
-# BELANGRIJK voor migratie van bestaande toolchain-tenants:
-# Per-tenant override `tag: latest` zetten tijdens cut-over, zodat de tenant
-# geen image-versie wisselt tegelijk met de namespace-move. Pas in een aparte
-# sync window verwijder je de override om naar de platform-default te
-# upgraden. Zie project memory en MIGRATION.md.
+# LET OP bij het wijzigen van deze regel: de chart bouwt één string
+# ("<pwa.image.image>:<pwa.image.tag>"), dus een tenant die alléén een `tag`
+# pint erft dit image-pad. Een registry-wissel hier verhuist die tenants dus
+# mee. Daarom staan de 23 legacy Docker Hub-tenants sinds 2026-08-12 met een
+# expliciete `registry` + `repository` in hun tenant-bestand: die blijven
+# bewust op docker.io/conduction2022 tot ze apart en gefaseerd naar ghcr gaan.
+# Hun tags bestaan niet 1-op-1 op ghcr (`V1.0.260422-development` heet daar
+# omgedraaid `development-V1.0.260422`), dus die migratie is niet enkel een
+# registry-wissel. Zie CHANGELOG.md 2026-08-12 en MIGRATION.md.
 pwa:
   image:
-    image: docker.io/conduction2022/woo-website-v2
+    image: ghcr.io/conductionnl/woo-website-v2
     pullPolicy: IfNotPresent
-    tag: "V1.0.260422-development"
+    tag: "v1.0.0"
 # ---------- Pod placement ----------
 # Frontends co-locate on the Nextcloud nodepool (status quo from
 # create_react.sh). A future openspec change can move them off; until then

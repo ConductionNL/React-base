@@ -38,9 +38,9 @@ tenant:
   environment: accept
   frontend:
     enabled: true            # false = geen frontend (interne/test-tenants)
-    registry: "docker.io"    # optioneel; alleen samen met repository
-    repository: "conduction2022/woo-website-v2"   # optioneel, zonder host en zonder tag
-    tag: "V1.0.260422-development"                # alleen het tag-deel
+    registry: "ghcr.io"      # optioneel; alleen samen met repository
+    repository: "conductionnl/woo-website-v2"     # optioneel, zonder host en zonder tag
+    tag: "v1.0.0"                                 # alleen het tag-deel
     host: "woo.almere.nl"    # override van <org>.openwoo.app
     branding:
       organisationName: "Gemeente Almere"
@@ -60,13 +60,21 @@ de ApplicationSet af uit `tenant.name` + `tenant.environment` — zie
 
 De image-reference bestaat uit drie losse velden; de ApplicationSet stelt er
 `<registry>/<repository>:<tag>` van samen. Laat je ze weg, dan geldt de
-platform-default uit `react-platform/values/common.yaml`.
+platform-default uit `react-platform/values/common.yaml`, en dat is sinds
+2026-08-12 **`ghcr.io/conductionnl/woo-website-v2:v1.0.0`**. Voor een nieuwe
+tenant hoef je deze drie velden dus niet te zetten — dat is de bedoeling.
 
 | Veld | Inhoud | Voorbeeld |
 |---|---|---|
-| `registry` | alleen de host, optioneel met poort | `docker.io`, `ghcr.io` |
-| `repository` | het pad, zonder host en zonder tag | `conduction2022/woo-website-v2` |
-| `tag` | alleen het tag-deel | `V1.0.260422-development` |
+| `registry` | alleen de host, optioneel met poort | `ghcr.io`, `docker.io` |
+| `repository` | het pad, zonder host en zonder tag | `conductionnl/woo-website-v2` |
+| `tag` | alleen het tag-deel | `v1.0.0` |
+
+Let op dat een tenant die alléén een `tag` pint het **image-pad uit
+`common.yaml`** erft. Zet je een tag die niet op ghcr.io bestaat, dan stalt de
+rollout in ImagePullBackOff. Wil je bewust een andere registry, zet dan
+`registry` én `repository` samen — dat is precies wat de 23 legacy Docker
+Hub-tenants doen.
 
 Stop géén volledige reference in `tag`: `tag: "woo-website-v2:V1.0.260422-development"`
 rendert als `…/woo-website-v2:woo-website-v2:V1.0.260422-development` en is

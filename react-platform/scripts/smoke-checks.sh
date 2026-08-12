@@ -8,7 +8,7 @@
 # Source of truth = Nextcloud-base's tenant directory ("Argo ís de watcher").
 # This script reproduces the react-tenants ApplicationSet's inline `values:`
 # block in bash so the rendered manifest matches what Argo CD produces
-# (derived org host, upstream URL, TLS secret, image-tag, branding env).
+# (derived org host, upstream URL, TLS secret, image-reference, branding env).
 # Keep in sync with react-platform/argo/applicationsets/react-tenants.yaml.
 #
 # No cluster required.
@@ -77,12 +77,25 @@ render_inline_values() {
   upstream_base="https://${upstream_host}/apps/opencatalogi/api"
 
   # Optional overrides from the frontend block
-  local override_host override_api tag
+  local override_host override_api tag registry repository image
   override_host="$(yq -r '.tenant.frontend.host // ""' "$f")"
   override_api="$(yq -r '.tenant.frontend.apiBaseUrl // ""' "$f")"
   tag="$(yq -r '.tenant.frontend.tag // ""' "$f")"
+  registry="$(yq -r '.tenant.frontend.registry // ""' "$f")"
+  repository="$(yq -r '.tenant.frontend.repository // ""' "$f")"
   [[ -n "$override_host" ]] && host="$override_host"
   [[ -n "$override_api" ]] && upstream_base="$override_api"
+
+  # Compose the image part exactly like react-tenants.yaml:170-180: registry is
+  # only meaningful together with repository, otherwise it is ignored.
+  image=""
+  if [[ -n "$repository" ]]; then
+    if [[ -n "$registry" ]]; then
+      image="${registry}/${repository}"
+    else
+      image="$repository"
+    fi
+  fi
 
   cat <<EOF
 commonLabels:
@@ -95,10 +108,16 @@ global:
 pwa:
 EOF
 
-  # Per-tenant image pin (tenant.frontend.tag)
-  if [[ -n "$tag" ]]; then
+  # Per-tenant image pin (tenant.frontend.registry/repository/tag). Each part is
+  # emitted only when set; anything omitted falls back to values/common.yaml.
+  if [[ -n "$tag" || -n "$image" ]]; then
     echo "  image:"
-    echo "    tag: \"${tag}\""
+    if [[ -n "$image" ]]; then
+      echo "    image: \"${image}\""
+    fi
+    if [[ -n "$tag" ]]; then
+      echo "    tag: \"${tag}\""
+    fi
   fi
 
   cat <<EOF
