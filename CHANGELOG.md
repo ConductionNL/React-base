@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Toegevoegd — 2026-08-17 (Gateway API-route per tenant, uit tenzij aangezet)
+- Nieuw `charts/woo-website/templates/httproute.yaml` plus een `gatewayRoute`-blok
+  in de chart-values. Rendert een `HTTPRoute` naast de bestaande Ingress voor de
+  migratie weg van ingress-nginx (upstream gearchiveerd, geen CVE-patches meer).
+- Opt-in via `gateway.frontend: true` in het tenant-bestand — dat staat in
+  Nextcloud-base. Custom-domain tenants zetten er `gateway.sectionName` bij,
+  want die vallen niet onder het openwoo-wildcard.
+- **Bestaande tenants renderen byte-identiek.** De ApplicationSet emit het blok
+  alleen als de vlag er staat, ook geen `enabled: false`: een blok dat altijd
+  meegaat zou alle 84 Applications tegelijk laten hersyncen. Bewezen door de
+  golden-tests — 20 van 20 groen zonder wijziging aan een bestaande golden.
+- Twee nieuwe testcases (`gateway-route`, `gateway-route-sectionname`). De
+  eerste versie van de template plakte `gatewayRoute:` aan de vorige regel door
+  verkeerde template-chomping; de suite ving dat vóór het cluster.
+- `sectionName` is verplicht op de route. Zonder pin hecht hij zich ook aan de
+  HTTP-listener, en omdat een expliciete hostname wint van de hostname-loze
+  redirect zou `http://` dan inhoud serveren in plaats van te redirecten.
+- Aanzetten verschuift géén verkeer: external-dns laat het bestaande record met
+  rust zolang de Ingress bestaat (gemeten 2026-08-17). De cutover is het
+  weghalen van de Ingress.
+- Nieuwe pagina `docs/GATEWAY-API.md`.
+
 ### Gewijzigd — 2026-08-12 (platform-default naar ghcr.io)
 - `react-platform/values/common.yaml` — `pwa.image.image` van
   `docker.io/conduction2022/woo-website-v2` naar

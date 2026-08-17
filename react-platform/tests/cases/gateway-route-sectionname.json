@@ -1,0 +1,1 @@
+{"tenant":{"name":"gooisemeren-accept","environment":"accept","gateway":{"frontend":true,"sectionName":"https-gooisemeren"},"frontend":{"host":"acceptatie-open.gooisemeren.nl","tls":{"secretName":"acceptatie-open-gooisemeren-nl-tls","issuer":"none"}}}}

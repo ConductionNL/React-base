@@ -1,0 +1,46 @@
+{{- if .Values.gatewayRoute.enabled -}}
+{{- $fullName := include "api-platform.fullname" . -}}
+{{- $svcPort := .Values.service.port -}}
+{{- /*
+  HTTPRoute naast de Ingress hierboven, voor de migratie van ingress-nginx naar
+  Gateway API. Rendert NIETS tenzij de tenant `gateway.frontend: true` zet — dus
+  bestaande tenants merken er niets van.
+
+  Coëxistentie is het uitgangspunt: zolang beide bestaan blijft de Ingress het
+  verkeer afhandelen, want het DNS-record wijst naar ingress-nginx. external-dns
+  laat dat record met rust zolang de Ingress bestaat (conflictresolutie op
+  resource, gemeten 2026-08-17). De cutover is dus het WEGHALEN van de Ingress,
+  niet het bijzetten van deze route.
+
+  sectionName is verplicht en geen detail: zonder pin hecht de route zich ook aan
+  de HTTP-listener op poort 80, en omdat een expliciete hostname wint van de
+  hostname-loze redirect-route zou http:// dan inhoud serveren in plaats van te
+  redirecten.
+*/ -}}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "api-platform.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: {{ .Values.gatewayRoute.gateway.name }}
+      namespace: {{ .Values.gatewayRoute.gateway.namespace }}
+      sectionName: {{ .Values.gatewayRoute.gateway.sectionName }}
+  hostnames:
+    - {{ .Values.global.domain | quote }}
+    {{- range .Values.ingress.hosts }}
+    - {{ .host | quote }}
+    {{- end }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: {{ $fullName }}
+          port: {{ $svcPort }}
+{{- end }}

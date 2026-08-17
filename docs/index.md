@@ -18,6 +18,9 @@ namespaces, DNS/TLS automatisch via cluster-infra).
   `mcc create-react`-flow naar de ApplicationSet (how-to).
 - [Rollouts](ROLLOUTS.md) — sync windows, platform- vs
   tenant-wijzigingen, image-bumps, waves, rollback (referentie).
+- [Gateway API-route](GATEWAY-API.md) — een frontend-tenant naast zijn
+  Ingress op de gedeelde Gateway zetten, en waarom de cutover het
+  weghalen van de Ingress is (how-to).
 
 De Nextcloud-kant van een tenant (de co-tenant namespace) is
 gedocumenteerd in `Nextcloud-base`.

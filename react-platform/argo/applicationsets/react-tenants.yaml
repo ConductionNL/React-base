@@ -290,6 +290,23 @@ spec:
                       - "{{ . }}"
                       {{- end }}
 
+              {{- /* Gateway API-route naast de Ingress. Rendert niets tenzij het
+                     tenant-bestand `gateway.frontend: true` zet. De Ingress blijft
+                     staan en houdt het verkeer: external-dns laat het bestaande
+                     record met rust zolang die Ingress bestaat. De cutover is het
+                     weghalen van de Ingress, niet het bijzetten van deze route.
+                     sectionName is per tenant te overschrijven voor custom
+                     domains, die niet onder het openwoo-wildcard vallen. */ -}}
+              {{- $gw := default (dict) .tenant.gateway -}}
+              {{- if (index $gw "frontend") }}
+              gatewayRoute:
+                enabled: true
+                {{- with (index $gw "sectionName") }}
+                gateway:
+                  sectionName: "{{ . }}"
+                {{- end }}
+              {{- end }}
+
         # Values repo (this repo, React-base) — anchors $values references above.
         - repoURL: "https://github.com/ConductionNL/React-base.git"
           targetRevision: HEAD

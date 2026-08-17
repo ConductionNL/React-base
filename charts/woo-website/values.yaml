@@ -82,6 +82,20 @@ ingress:
   hosts:
   tls: []
 
+# Gateway API-route naast de Ingress (migratie weg van ingress-nginx).
+# Uit tenzij de tenant `gateway.frontend: true` zet — bestaande tenants
+# renderen dus niets extra's. Zie React-base/docs/GATEWAY-API.md.
+gatewayRoute:
+  enabled: false
+  gateway:
+    name: platform-gateway
+    namespace: envoy-gateway-system
+    # De listener waar de route aan hangt. Hosts onder *.accept.openwoo.app en
+    # *.openwoo.app vallen onder het gedeelde wildcard-certificaat; een
+    # custom-domain tenant heeft een eigen listener met een eigen cert nodig en
+    # zet deze waarde daarop.
+    sectionName: https-openwoo
+
 # Static-site nginx → laag baseline-verbruik, room voor traffic-spikes.
 resources:
   requests:
