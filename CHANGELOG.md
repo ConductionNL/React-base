@@ -15,7 +15,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   staan op auto-sync met selfHeal; een platform-default zou de hele vloot binnen
   minuten proxyen. Vandaag gemeten: 72 van 92 apps waren drie minuten na een push
   al op de nieuwe revisie. Canary eerst betekent dus per tenant, niet per default.
-- Aangezet op `canary-accept` (wave 0). Bestaande tenants renderen byte-identiek:
+- Aangezet op de **live-canary**, niet op de accept-canary. Universal SSL van
+  Cloudflare dekt `openwoo.app` en `*.openwoo.app`, maar geen tweede niveau zoals
+  `*.accept.openwoo.app`; een geproxiede accept-host geeft daardoor een
+  TLS-handshakefout. Gemeten op `canary.accept.openwoo.app`, dat al geproxied
+  stond. Voor dat niveau is Advanced Certificate Manager nodig (betaalde add-on).
+- Bestaande tenants renderen byte-identiek:
   van de 22 goldens veranderde er geen, er kwamen alleen twee nieuwe bij voor de
   testcase `proxied`.
 - Voorwaarde aan de Cloudflare-kant: een Configuration Rule met SSL Full (strict)
