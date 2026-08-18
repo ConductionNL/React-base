@@ -1,5 +1,5 @@
 ---
-last_reviewed: 2026-07-06
+last_reviewed: 2026-08-18
 owner: info@conduction.nl
 ---
 
@@ -149,3 +149,57 @@ Uitvoeren binnen 17:00–07:00 sync window. Begin met canary
 
 Image-tag wordt **niet** gebumpt tijdens de migratie — dat is een
 aparte platform-change die na alle cut-overs gepland kan worden.
+
+## Dertien frontends staan buiten GitOps (gemeten 2026-08-18)
+
+Bij de IPv6-uitrol bleven dertien `*-reactfront`-Applications achter. Onderzocht,
+en het is geen sync-probleem maar een herkomst-probleem.
+
+| Kenmerk | Deze dertien | Een appset-tenant (bv. `baarn`) |
+|---|---|---|
+| `ownerReferences` | geen | de ApplicationSet |
+| bronvorm | één `spec.source` | `spec.sources` (chart + values) |
+| repo | `woo-website-template-apiv2.git`, path `helm/woo-website` | React-base, gevendorde chart |
+| `targetRevision` | `main` | vaste revisie |
+| tenant-bestand in Nextcloud-base | **geen** (op één na) | ja |
+
+De apps:
+
+    bct-accept        beek-accept       beek-live         ede-accept
+    ede-live          koophulpje-live   odmh-accept       soest-accept
+    soest-live        stichtsevecht-live  test-accept     vaals-accept
+    zandbak-010-live
+
+(suffix `-reactfront`; "live" is de productie-variant)
+
+Van de tien betrokken organisaties heeft er **één** een tenant-bestand
+(`stichtsevecht`, en dan alleen accept — juist de live-omgeving hangt hier los).
+De andere negen bestaan alleen in het cluster.
+
+### Wat dat betekent
+
+Zonder tenant-bestand kan de ApplicationSet deze Applications niet genereren, dus
+missen ze **elke** platformwijziging. Gemeten op drie van hen
+(`soest`, `beek`, `zandbak-010`): 0 van de 3 audit-headers
+(`Content-Security-Policy`, `X-Frame-Options`, `Referrer-Policy`), geen IPv6, en
+de ongetekende Conduction-`security.txt`. Ze draaien op de upstream-chart met
+`targetRevision: main`, dus elke commit daar landt ongezien in een
+gemeenteomgeving.
+
+Dit is dus breder dan IPv6: het is de restpost van de migratie die
+`MIGRATION.md` beschrijft, plus een handvol omgevingen die nooit in de
+tenantadministratie zijn opgenomen.
+
+### Voorgestelde volgorde
+
+1. **Vaststellen wat er nog moet leven.** `test-accept`, `zandbak-010-live` en
+   `bct-accept` klinken als proef- en zandbakomgevingen. Wat weg kan, moet weg —
+   dat is de goedkoopste helft van het probleem.
+2. **Per resterende omgeving een tenant-bestand** in Nextcloud-base, dan neemt de
+   ApplicationSet hem over bij de volgende sync (zelfde app-naam) en komt hij
+   automatisch mee met headers, ECDSA, IPv6 en `security.txt`.
+3. **Cutover volgens `MIGRATION.md`**, één tenant per keer, binnen het sync window.
+4. `stichtsevecht-live` eerst: daar bestaat het accept-bestand al, dus dat is de
+   kleinste stap met de meeste zekerheid.
+
+Niets van dit alles is gedaan; dit is de bevinding, niet de uitvoering.

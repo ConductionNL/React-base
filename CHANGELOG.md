@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Toegevoegd — 2026-08-18 (dertien frontends staan buiten GitOps)
+- `docs/MIGRATION.md` heeft een sectie met de restpost van de migratie. Bij de
+  IPv6-uitrol bleven dertien `*-reactfront`-Applications achter; onderzocht en het
+  is geen sync-probleem maar een herkomst-probleem.
+- Kenmerken: geen `ownerReferences` (dus niet door de ApplicationSet gemaakt), één
+  `spec.source` naar `woo-website-template-apiv2` op `targetRevision: main` in
+  plaats van de gevendorde chart, en van de tien betrokken organisaties heeft er
+  **één** een tenant-bestand in Nextcloud-base — en dan alleen voor accept.
+- Gevolg, gemeten op `soest`, `beek` en `zandbak-010`: 0 van de 3 audit-headers,
+  geen IPv6, ongetekende `security.txt`. Ze missen dus elke platformwijziging, niet
+  alleen IPv6. En `main` als targetRevision betekent dat elke upstream-commit
+  ongezien in een gemeenteomgeving landt.
+- Voorgestelde volgorde staat in de doc: eerst vaststellen wat nog moet leven
+  (`test-accept`, `zandbak-010`, `bct-accept` ruiken naar zandbak), dan per
+  omgeving een tenant-bestand, dan cutover volgens deze runbook. Begin bij
+  `stichtsevecht`, daar bestaat het accept-bestand al.
+
+
 ### Gewijzigd — 2026-08-18 (proxy nu ook aan op accept)
 - De default staat aan voor **beide** omgevingen. Dat kan sinds er naast het
   universal-certificaat een advanced certificate pack op `accept.openwoo.app` +
