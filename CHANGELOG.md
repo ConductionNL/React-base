@@ -6,6 +6,61 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Toegevoegd — 2026-08-18 (security-response-headers en ECDSA-certificaatsleutel)
+- Aanleiding: audit op `open.dinkelland.nl`. Gemeten op 2026-08-18 ontbraken
+  `Content-Security-Policy`, `X-Frame-Options` en `Referrer-Policy`; HSTS en
+  `X-Content-Type-Options` werden al geserveerd. Het certificaat was
+  Let's Encrypt **RSA-2048**, in de audit als phase-out aangemerkt.
+- Nieuw `securityHeaders`-blok in `charts/woo-website/values.yaml`, gerenderd op
+  **twee** datapaden: een `configuration-snippet`-annotatie op de Ingress
+  (`more_set_headers`) en een `ResponseHeaderModifier`-filter op de HTTPRoute.
+  Eén bron, zodat een tenant tijdens de Gateway-migratie via beide paden
+  dezelfde headers krijgt. Beide mechanismen *vervangen* een header en zetten er
+  geen tweede bij, dus wat de pod al stuurt blijft enkelvoudig.
+- CSP staat bewust op **Report-Only**. Gemeten in de live bundel: één inline
+  `<script>` (Gatsby-loader, hash wisselt per build), 39 inline
+  `style=`-attributen, fonts van `fonts.gstatic.com` en `db.onlinewebfonts.com`,
+  branding-afbeeldingen van een externe host per tenant. Enforce pas na meten
+  per tenant, anders breekt de site.
+- `custom-headers` (de niet-snippet-annotatie van ingress-nginx 1.12) is
+  bekeken en afgevallen: die eist eerst `global-allowed-response-headers` in de
+  globale controller-ConfigMap, en die staat niet in Git.
+- ApplicationSet `react-tenants`: naast `cert-manager.io/cluster-issuer` nu ook
+  `private-key-algorithm: ECDSA` + `private-key-size: "256"` voor
+  custom-domain-tenants. Raakt alleen tenants met een eigen certificaat; het
+  gedeelde openwoo-wildcard staat buiten deze repo. **Let op:** dit wijzigt de
+  Certificate-spec, dus cert-manager geeft per geraakte tenant éénmalig een nieuw
+  certificaat uit — inplannen binnen het sync window.
+- Golden `issuer-cert-manager.values.yaml` bijgewerkt; `./scripts/verify.sh`
+  groen (20/20 render-tests).
+- Niet in deze wijziging, wel gemeten en gemeld: TLS 1.2 accepteert nog
+  `rsa_pkcs1_sha224` (zit in de nginx-controller, niet in Git), de geserveerde
+  `security.txt` is ongetekend en zit in het image, en de bundel haalt fonts bij
+  Google (`fonts.gstatic.com`).
+
+### Toegevoegd — 2026-08-18 (ondertekende security.txt en publieke sleutel per tenant)
+- Nieuw `wellKnown.files` in de chart-values plus `templates/wellknown.yaml`: een
+  ConfigMap met bestanden die met `subPath` over `/usr/share/nginx/html/.well-known/`
+  worden gemount. Zonder het blok rendert er niets extra's.
+- `templates/deployment.yaml` krijgt de mounts en een `checksum/wellknown`-annotatie
+  op de pod: een `subPath`-mount ververst niet vanzelf als de ConfigMap wijzigt.
+- ApplicationSet geeft `tenant.frontend.wellKnown` door. De inhoud is
+  PGP-ondertekend, dus byte-exactheid is een eis en geen wens; het renderharnas
+  kreeg daarvoor `indent`/`nindent` (spiegelt sprig: ook lege regels krijgen de
+  padding, wat een YAML-blokscalar precies nodig heeft).
+- **Bewezen, niet aangenomen:** tenant-bestand → ApplicationSet → chart →
+  ConfigMap levert byte-identieke inhoud op, en `gpg --verify` op de gerenderde
+  `security.txt` geeft *Good signature from "security@noaberkracht.nl"*. Nieuwe
+  testcase `wellknown` (22/22 render-tests groen).
+- Aanleiding: de live `security.txt` was de ongetekende Conduction-template, en
+  `/.well-known/pgp-key.txt` viel in de SPA-catch-all — status 200 met 5 MB HTML
+  in plaats van een sleutel (gemeten 2026-08-18 op open.dinkelland.nl).
+- `docs/ADDING-TENANT.md`: secties over `frontend.wellKnown` en over de
+  ECDSA-annotaties bij de issuer-tak.
+- Nieuwe pagina `docs/SECURITY-HEADERS.md` (in `docs/index.md` opgenomen): de
+  headerset, waarom CSP op Report-Only staat en hoe je per tenant naar enforce
+  toe werkt, plus wat níét uit deze repo komt (HSTS, nosniff, SHA-224, CAA/DNS).
+
 ### Toegevoegd — 2026-08-17 (Gateway API-route per tenant, uit tenzij aangezet)
 - Nieuw `charts/woo-website/templates/httproute.yaml` plus een `gatewayRoute`-blok
   in de chart-values. Rendert een `HTTPRoute` naast de bestaande Ingress voor de

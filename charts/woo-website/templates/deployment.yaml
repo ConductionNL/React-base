@@ -1,3 +1,4 @@
+{{- $wk := .Values.wellKnown | default dict }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,9 +14,16 @@ spec:
       {{- include "api-platform.selectorLabelsPWA" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+      {{- if or .Values.podAnnotations $wk.files }}
       annotations:
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if $wk.files }}
+        {{- /* Een subPath-mount ververst NIET als de ConfigMap wijzigt; deze
+               checksum rolt de pods wel bij nieuwe inhoud. */}}
+        checksum/wellknown: {{ toYaml $wk.files | sha256sum }}
+        {{- end }}
       {{- end }}
       labels:
         {{- include "api-platform.selectorLabelsPWA" . | nindent 8 }}
@@ -35,6 +43,11 @@ spec:
             emptyDir: {}
           - name: tmpfs2
             emptyDir: {}
+          {{- if $wk.files }}
+          - name: wellknown
+            configMap:
+              name: {{ include "api-platform.fullname" . }}-wellknown
+          {{- end }}
 
       containers:
         - name: {{ .Chart.Name }}-pwa
@@ -47,6 +60,12 @@ spec:
                   name: tmpfs
               -   mountPath: /var/run
                   name: tmpfs2
+              {{- range $name, $_ := $wk.files }}
+              -   mountPath: /usr/share/nginx/html/.well-known/{{ $name }}
+                  name: wellknown
+                  subPath: {{ $name }}
+                  readOnly: true
+              {{- end }}
           ports:
             - name: http
               containerPort: 8080

@@ -1,5 +1,5 @@
 ---
-last_reviewed: 2026-07-06
+last_reviewed: 2026-08-18
 owner: info@conduction.nl
 ---
 
@@ -132,6 +132,48 @@ zit):
 
     echo | openssl s_client -connect <host>:443 -servername <host> 2>/dev/null \
       | openssl x509 -noout -subject -issuer -dates
+
+### Sleutel van het certificaat
+
+Bij een issuer-tak zet de ApplicationSet er twee annotaties bij:
+`cert-manager.io/private-key-algorithm: ECDSA` en `private-key-size: "256"`.
+RSA-2048 is in de audit van 2026-08-18 als phase-out aangemerkt. Je hoeft hier
+niets voor te zetten; het geldt voor elke tenant met een eigen certificaat.
+
+### `/.well-known/`-bestanden (`frontend.wellKnown`)
+
+Optioneel blok waarmee een tenant bestanden onder `/.well-known/` serveert. De
+chart maakt er een ConfigMap van en mount die met `subPath` over de image-fs:
+
+    frontend:
+      wellKnown:
+        security.txt: |
+          -----BEGIN PGP SIGNED MESSAGE-----
+          ...
+        pgp-key.txt: |
+          -----BEGIN PGP PUBLIC KEY BLOCK-----
+          ...
+
+Zonder het blok rendert er niets extra's en blijft staan wat het image zelf
+serveert (een ongetekende Conduction-template).
+
+Drie dingen om te weten:
+
+- **Het image kan dit niet doen.** Eén image bedient de hele vloot, terwijl een
+  `security.txt` per gemeente verschilt: RFC 9116 wil een `Canonical`-URL die bij
+  de host hoort, en het bestand is ondertekend.
+- **De inhoud is byte-gevoelig.** Een PGP-ondertekende tekst is ongeldig na één
+  gewijzigd teken, en dat is aan de buitenkant niet te zien. Vervang het hele
+  blok door een nieuw ondertekend bestand; bewerk nooit een regel. Controleren:
+  `curl -sS https://<host>/.well-known/security.txt | gpg --verify`.
+- **Wijst `Encryption:` naar een sleutel, zet die sleutel er dan bij.** Anders
+  valt die URL in de SPA-catch-all en krijgt de lezer 5 MB HTML met status 200
+  in plaats van een sleutel — precies wat er op `open.dinkelland.nl` gebeurde
+  (gemeten 2026-08-18).
+
+Pods krijgen de nieuwe inhoud pas na een rollout: een `subPath`-mount ververst
+niet vanzelf. De chart zet daarom een `checksum/wellknown`-annotatie op de pod,
+zodat een wijziging de pods vervangt.
 
 ## Frontend uitzetten of tenant verwijderen
 

@@ -16,6 +16,8 @@ This chart deploys the static Woo PWA behind an Ingress and configures the NGINX
 - `global.domain`: Public FQDN for the PWA
 - `global.tls`: Whether to add TLS section on the Ingress
 - `ingress.*`: Ingress class/annotations/extra hosts and TLS entries
+- `wellKnown.files`: map van bestandsnaam → inhoud, geserveerd onder `/.well-known/` (ConfigMap + subPath-mount over de image-fs). Gebruikt voor een ondertekende `security.txt` en de bijbehorende publieke sleutel
+- `securityHeaders.{enabled,headers}`: response-headers die op élke response worden gezet — via een snippet-annotatie op de Ingress én via een `ResponseHeaderModifier` op de HTTPRoute, zodat beide datapaden dezelfde set leveren
 
 ### Quickstart
 1) Create an overrides file, for example `values.override.yaml`:
@@ -58,6 +60,7 @@ helm uninstall woo-pwa -n woo
 ### Notes
 - The image is a static build of Gatsby. Any `GATSBY_*` variables must be set at image build-time. For most cases, you only need to adjust the runtime proxy via `pwa.upstream.*`.
 - If you need a custom theme or other `GATSBY_*` overrides, build your own image from `pwa/Dockerfile` with the appropriate build args, push it, and set `pwa.image.*` to your image and tag.
+- `securityHeaders` levert de internet.nl-set (`X-Frame-Options`, `Referrer-Policy`, CSP). HSTS komt van ingress-nginx en `X-Content-Type-Options` van de nginx in de pod — die staan hier dus niet in. CSP staat op **Report-Only**: de Gatsby-bundel bevat inline script en inline style, en de branding per tenant haalt afbeeldingen van een externe host. Enforce (dezelfde waarde onder `Content-Security-Policy`) pas na meten per tenant.
 
 ### Deploy with Argo CD (UI)
 - Repository URL: `https://github.com/ConductionNL/woo-website-template-apiv2.git`

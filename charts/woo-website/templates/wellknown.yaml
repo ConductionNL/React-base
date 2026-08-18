@@ -1,0 +1,24 @@
+{{- $wk := .Values.wellKnown | default dict -}}
+{{- if $wk.files -}}
+{{- /*
+  Bestanden die onder /.well-known/ geserveerd moeten worden, per tenant
+  meegegeven via `wellKnown.files` (bron: het tenant-bestand in Nextcloud-base).
+  Rendert NIETS zonder die values, dus bestaande tenants zien geen wijziging.
+
+  Waarom hier en niet in het image: het image is gedeeld door de hele vloot,
+  terwijl een ondertekende security.txt per gemeente verschilt (RFC 9116 wil een
+  Canonical-URL die bij de host hoort). De inhoud is PGP-ondertekend en dus
+  byte-gevoelig — bewerk hem nooit met de hand, vervang het hele blok.
+*/ -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "api-platform.fullname" . }}-wellknown
+  labels:
+    {{- include "api-platform.labelsPWA" . | nindent 4 }}
+data:
+  {{- range $name, $content := $wk.files }}
+  {{ $name }}: |
+    {{- $content | nindent 4 }}
+  {{- end }}
+{{- end }}

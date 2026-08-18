@@ -40,6 +40,20 @@ spec:
         - path:
             type: PathPrefix
             value: /
+      {{- $sh := .Values.securityHeaders | default dict }}
+      {{- if and $sh.enabled $sh.headers }}
+      {{- /* Zelfde headerset als de Ingress-annotatie, zie values.yaml.
+             `set` vervangt een bestaande header; `add` zou er een tweede bij
+             zetten. */}}
+      filters:
+        - type: ResponseHeaderModifier
+          responseHeaderModifier:
+            set:
+              {{- range $name, $value := $sh.headers }}
+              - name: {{ $name | quote }}
+                value: {{ $value | quote }}
+              {{- end }}
+      {{- end }}
       backendRefs:
         - name: {{ $fullName }}
           port: {{ $svcPort }}

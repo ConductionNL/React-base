@@ -82,6 +82,50 @@ ingress:
   hosts:
   tls: []
 
+# Bestanden onder /.well-known/, per tenant meegegeven vanuit het tenant-bestand
+# in Nextcloud-base (`tenant.frontend.wellKnown`). Leeg = niets extra; dan blijft
+# staan wat het image zelf serveert.
+#
+# Gebruikt voor de ondertekende `security.txt` (RFC 9116) en de bijbehorende
+# publieke PGP-sleutel waar het `Encryption`-veld naar wijst. De inhoud gaat als
+# ConfigMap met een subPath-mount over het bestand in de image-fs.
+#
+# De inhoud is PGP-ondertekend: byte-exact overnemen, nooit met de hand
+# bijwerken. Een gewijzigde regel maakt de signatuur ongeldig en dat is aan de
+# buitenkant niet te zien.
+wellKnown:
+  files: {}
+    # security.txt: |
+    #   -----BEGIN PGP SIGNED MESSAGE-----
+    #   ...
+
+# Security-response-headers op élke response. Eén bron voor twee datapaden:
+# de Ingress (ingress-nginx, `more_set_headers`) en de HTTPRoute (Envoy
+# Gateway, `ResponseHeaderModifier`), zodat een tenant tijdens de migratie
+# dezelfde headers krijgt via welk pad zijn verkeer ook loopt.
+#
+# Aanleiding: audit op open.dinkelland.nl (2026-08-18). Gemeten ontbraken CSP,
+# X-Frame-Options en Referrer-Policy; HSTS en X-Content-Type-Options werden al
+# geserveerd (respectievelijk door ingress-nginx en door de nginx in de pod).
+# Dit is de internet.nl-set; COOP/Permissions-Policy staan er bewust niet in.
+#
+# Beide mechanismen ZETTEN de header (en plakken er geen tweede bij zoals
+# nginx' `add_header` doet), dus een header die de pod zelf al stuurt blijft
+# enkelvoudig.
+#
+# CSP staat bewust op Report-Only. Gemeten in de live bundel: één inline
+# `<script>` (de Gatsby-loader, hash wisselt per build), 39 inline
+# `style=`-attributen, fonts van fonts.gstatic.com en db.onlinewebfonts.com, en
+# branding-afbeeldingen van een externe host per tenant. Report-Only meldt
+# overtredingen in de browserconsole zonder de site te breken; enforce (dezelfde
+# waarde onder `Content-Security-Policy`) pas nadat dat per tenant gemeten is.
+securityHeaders:
+  enabled: true
+  headers:
+    X-Frame-Options: "DENY"
+    Referrer-Policy: "no-referrer"
+    Content-Security-Policy-Report-Only: "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://db.onlinewebfonts.com; font-src 'self' data: https://fonts.gstatic.com https://db.onlinewebfonts.com; img-src 'self' data: https://raw.githubusercontent.com; connect-src 'self' https://*.commonground.nu"
+
 # Gateway API-route naast de Ingress (migratie weg van ingress-nginx).
 # Uit tenzij de tenant `gateway.frontend: true` zet — bestaande tenants
 # renderen dus niets extra's. Zie React-base/docs/GATEWAY-API.md.

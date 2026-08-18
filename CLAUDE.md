@@ -99,7 +99,11 @@ GitHub Actions on every push/PR (`.github/workflows/validate.yaml` — TODO, tas
 `charts/woo-website/` is a pinned copy of `woo-website-template-apiv2/helm/woo-website` at a specific upstream commit (see `charts/woo-website/UPSTREAM`). Divergences from upstream:
 
 - `templates/networkpolicy.yaml` — added by react-base (pod-label-scoped NetworkPolicies)
-- `values.yaml` — added `networkPolicy.{enabled,ingressNamespace}` block
+- `templates/httproute.yaml` — added by react-base (Gateway API-route + ResponseHeaderModifier)
+- `templates/ingress.yaml` — added by react-base (snippet-annotatie voor de securityHeaders)
+- `templates/wellknown.yaml` — added by react-base (ConfigMap met /.well-known/-bestanden)
+- `templates/deployment.yaml` — added by react-base (subPath-mounts + checksum-annotatie)
+- `values.yaml` — added `networkPolicy.{enabled,ingressNamespace}`, `gatewayRoute.*`, `securityHeaders.*` en `wellKnown.files`
 
 Bumping the vendored chart is a platform-level change (sync window applies).
 

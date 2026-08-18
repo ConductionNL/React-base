@@ -34,6 +34,11 @@ func isEmpty(v any) bool {
 	return false
 }
 
+func indent(spaces int, v string) string {
+	pad := strings.Repeat(" ", spaces)
+	return pad + strings.ReplaceAll(v, "\n", "\n"+pad)
+}
+
 func funcs() template.FuncMap {
 	return template.FuncMap{
 		"default": func(d any, given ...any) any {
@@ -51,6 +56,12 @@ func funcs() template.FuncMap {
 		},
 		"list":       func(v ...any) []any { return v },
 		"trimSuffix": func(suffix, s string) string { return strings.TrimSuffix(s, suffix) },
+		// indent/nindent spiegelen sprig: élke regel krijgt de padding, ook een
+		// lege regel. Dat is precies wat een YAML-blokscalar nodig heeft (een
+		// regel met alleen padding leest als lege regel), en het houdt een
+		// PGP-ondertekende tekst byte-exact.
+		"indent":  indent,
+		"nindent": func(spaces int, v string) string { return "\n" + indent(spaces, v) },
 	}
 }
 

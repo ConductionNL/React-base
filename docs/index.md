@@ -1,5 +1,5 @@
 ---
-last_reviewed: 2026-07-06
+last_reviewed: 2026-08-18
 owner: info@conduction.nl
 ---
 
@@ -18,6 +18,10 @@ namespaces, DNS/TLS automatisch via cluster-infra).
   `mcc create-react`-flow naar de ApplicationSet (how-to).
 - [Rollouts](ROLLOUTS.md) — sync windows, platform- vs
   tenant-wijzigingen, image-bumps, waves, rollback (referentie).
+- [Security-headers en certificaatsleutel](SECURITY-HEADERS.md) — de
+  audit-set (CSP, X-Frame-Options, Referrer-Policy), waarom CSP op
+  Report-Only staat, en de ECDSA-sleutel bij een eigen certificaat
+  (referentie).
 - [Gateway API-route](GATEWAY-API.md) — een frontend-tenant naast zijn
   Ingress op de gedeelde Gateway zetten, en waarom de cutover het
   weghalen van de Ingress is (how-to).

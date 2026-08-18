@@ -18,13 +18,30 @@ metadata:
   name: {{ $fullName }}
   labels:
     {{- include "api-platform.labels" . | nindent 4 }}
-  {{- if or .Values.ingress.annotations .Values.global.tls }}
+  {{- $sh := .Values.securityHeaders | default dict }}
+  {{- $shOn := and $sh.enabled $sh.headers }}
+  {{- if or .Values.ingress.annotations .Values.global.tls $shOn }}
   annotations:
     {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
     {{- if .Values.global.tls }}
     cert-manager.io/cluster-issuer: letsencrypt-prod
+    {{- end }}
+    {{- if $shOn }}
+    {{- /*
+      `more_set_headers` (headers-more, zit in ingress-nginx) VERVANGT een
+      bestaande header; `add_header` zou er een tweede bij zetten. De
+      snippet-annotatie is hier het enige pad dat vandaag werkt: het
+      alternatief `custom-headers` eist eerst een allowlist in de globale
+      controller-ConfigMap, en die staat niet in Git. De inhoud komt uit de
+      platform-values, niet uit een tenant-bestand. Op het Gateway-pad doet
+      de ResponseHeaderModifier in httproute.yaml hetzelfde, zonder snippet.
+    */}}
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      {{- range $name, $value := $sh.headers }}
+      more_set_headers "{{ $name }}: {{ $value }}";
+      {{- end }}
     {{- end }}
   {{- end }}
 spec:

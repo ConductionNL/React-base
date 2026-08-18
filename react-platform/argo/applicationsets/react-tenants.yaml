@@ -269,6 +269,12 @@ spec:
                 {{- if and $tlsIssuer (ne $tlsIssuer "none") }}
                 annotations:
                   cert-manager.io/cluster-issuer: "{{ $tlsIssuer }}"
+                  # RSA-2048 = phase-out (audit 2026-08-18) → ECDSA P-256.
+                  # cert-manager v1.18 leest deze annotaties op de Ingress en
+                  # zet ze door naar de Certificate; dat is een spec-wijziging,
+                  # dus éénmalig een nieuw certificaat per geraakte tenant.
+                  cert-manager.io/private-key-algorithm: ECDSA
+                  cert-manager.io/private-key-size: "256"
                 {{- end }}
                 # Geen `hosts:`-entry voor de primaire host — de chart maakt al een rule
                 # op `global.domain`; een tweede via `ingress.hosts` zou dubbel zijn.
@@ -289,6 +295,21 @@ spec:
                       {{- range $extraHosts }}
                       - "{{ . }}"
                       {{- end }}
+
+              {{- /* Bestanden onder /.well-known/ (tenant.frontend.wellKnown), bijv. een
+                     PGP-ondertekende security.txt en de publieke sleutel waar het
+                     Encryption-veld naar wijst. De chart mount ze met subPath over de
+                     image-fs. Zonder het blok rendert er niets extra's.
+                     De inhoud is ondertekend: byte-exact laten staan. */ -}}
+              {{- $wellKnown := default (dict) (index $fe "wellKnown") }}
+              {{- if $wellKnown }}
+              wellKnown:
+                files:
+                  {{- range $wkName, $wkContent := $wellKnown }}
+                  {{ $wkName }}: |
+                    {{- $wkContent | nindent 20 }}
+                  {{- end }}
+              {{- end }}
 
               {{- /* Gateway API-route naast de Ingress. Rendert niets tenzij het
                      tenant-bestand `gateway.frontend: true` zet. De Ingress blijft
