@@ -1,0 +1,1 @@
+{"tenant":{"name":"canary-accept","environment":"accept","gateway":{"frontend":true,"nextcloud":true,"sectionName":"https-canary-nextcloud"}}}

@@ -334,7 +334,14 @@ spec:
               {{- if (index $gw "frontend") }}
               gatewayRoute:
                 enabled: true
-                {{- with (index $gw "sectionName") }}
+                {{- /* frontendSectionName, NIET sectionName: die laatste hoort bij de
+                       Nextcloud-route en wijst naar een heel andere listener. Ze delen
+                       één tenant-blok, dus één gedeeld veld koppelde op 2026-08-18 de
+                       frontend aan de commonground.nu-listener — de route kwam op
+                       Accepted=False (NoMatchingListenerHostname). Weggelaten = de
+                       chart-default https-openwoo, wat klopt voor elke host onder het
+                       openwoo-wildcard. Alleen custom domains zetten dit. */}}
+                {{- with (index $gw "frontendSectionName") }}
                 gateway:
                   sectionName: "{{ . }}"
                 {{- end }}

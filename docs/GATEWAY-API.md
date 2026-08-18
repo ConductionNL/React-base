@@ -35,7 +35,14 @@ eigen `certificateRef`. Verwijs er dan naar:
 
     gateway:
       frontend: true
-      sectionName: https-gooisemeren
+      frontendSectionName: https-gooisemeren
+
+Let op het `frontend`-voorvoegsel. Het blok `tenant.gateway` wordt gedeeld met de
+Nextcloud-route, en die heeft zijn eigen `sectionName` naar een heel andere
+listener — andere hostname, ander certificaat. Op 2026-08-18 deelden beide één
+veld, waardoor de frontend van canary-accept aan de commonground.nu-listener werd
+gehangen en de route op `Accepted=False (NoMatchingListenerHostname)` kwam. De
+testcase `gateway-route-nextcloud-sectionname-ignored` bewaakt dat nu.
 
 Zonder `gateway:`-blok rendert er niets extra's — ook geen `enabled: false`.
 Dat is opzet: een blok dat altijd meegaat zou alle 84 tenant-Applications
