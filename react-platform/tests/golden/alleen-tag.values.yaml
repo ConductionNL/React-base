@@ -33,6 +33,8 @@ ingress:
   # Custom-domain tenants (not under *.openwoo.app) set frontend.tls to get their
   # own cert: issuer != "none" adds cert-manager.io/cluster-issuer for a per-host
   # cert; issuer "none" references a pre-seeded/BYO secret with no annotation.
+  annotations:
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
   # Geen `hosts:`-entry voor de primaire host — de chart maakt al een rule
   # op `global.domain`; een tweede via `ingress.hosts` zou dubbel zijn.
   # Alleen frontend.extraHosts komen hier als extra rules bij.

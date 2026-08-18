@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Gewijzigd — 2026-08-18 (proxy nu ook aan op accept)
+- De default staat aan voor **beide** omgevingen. Dat kan sinds er naast het
+  universal-certificaat een advanced certificate pack op `accept.openwoo.app` +
+  `*.accept.openwoo.app` staat (besteld en `active` op 2026-08-18, Google Trust
+  Services, 90 dagen, auto-renew). Die ACM-entitlement zat al op het plan — 0 van
+  100 advanced certificates in gebruik — dus er was niets te kopen.
+- Zonder dat pack dekt Universal SSL alleen `openwoo.app` en `*.openwoo.app` en
+  gaf een geproxiede accept-host een TLS-handshakefout. Verdwijnt het pack, dan
+  moet deze default weer per omgeving; dat staat als zodanig in de template.
+- 12 goldens veranderden mee (de accept-cases). `frontend.proxied: false` blijft
+  werken als uitzondering — de testcase `proxied-uit-op-live` bewaakt dat.
+- Total TLS blijft uit: dat zou een certificaat per geproxiede hostnaam uitgeven,
+  terwijl één wildcard precies het gat dekt.
+
+
 ### Gewijzigd — 2026-08-18 (proxy standaard aan op live, uit op accept)
 - `tenant.frontend.proxied` heeft nu een default per omgeving: **aan voor live,
   uit voor accept**. Dat is geen voorzichtigheid maar een certificaatgrens.

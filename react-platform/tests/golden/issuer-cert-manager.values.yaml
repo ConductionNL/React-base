@@ -27,6 +27,7 @@ ingress:
   # own cert: issuer != "none" adds cert-manager.io/cluster-issuer for a per-host
   # cert; issuer "none" references a pre-seeded/BYO secret with no annotation.
   annotations:
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
     cert-manager.io/cluster-issuer: "letsencrypt-dns"
     # RSA-2048 = phase-out (audit 2026-08-18) → ECDSA P-256.
     # cert-manager v1.18 leest deze annotaties op de Ingress en
