@@ -62,6 +62,13 @@ spec:
       kind: "*"
     - group: cert-manager.io
       kind: "*"
+    # Gateway API. Nodig sinds de frontend-chart een HTTPRoute kan renderen
+    # (opt-in per tenant met gateway.frontend). Ontbrak bij de eerste uitrol,
+    # waardoor canary-accept-reactfront op 2026-08-18 niet meer synchroniseerde:
+    # één niet-toegestane resource laat de HELE Application falen, dus ook
+    # ongerelateerde wijzigingen aan de Ingress bleven steken.
+    - group: gateway.networking.k8s.io
+      kind: "*"
     - group: monitoring.coreos.com
       kind: "*"
 
