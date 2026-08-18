@@ -1,0 +1,14 @@
+spec:
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+      jqPathExpressions:
+        - '.spec.template.spec.containers[].env[] | select(.name | test("^(GATSBY_|NL_DESIGN_)"))'
+        - '.spec.template.spec.containers[].image'
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler
+      jsonPointers:
+        - /status
+

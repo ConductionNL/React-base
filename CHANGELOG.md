@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Gewijzigd — 2026-08-18 (proxy standaard aan op live, uit op accept)
+- `tenant.frontend.proxied` heeft nu een default per omgeving: **aan voor live,
+  uit voor accept**. Dat is geen voorzichtigheid maar een certificaatgrens.
+  Universal SSL van Cloudflare dekt `openwoo.app` en `*.openwoo.app`, niet
+  `*.accept.openwoo.app`; een geproxiede accept-host geeft een TLS-handshakefout.
+  Gemeten op `canary.accept.openwoo.app`: handshake failure zolang hij geproxied
+  stond, `Verify return code: 0` en status 200 nadat hij terug op DNS only ging.
+- De expliciete waarde overruled de default in **beide** richtingen. Daarvoor was
+  `hasKey` nodig in plaats van `default`: sprig's `default` ziet `false` als leeg
+  en zou een expliciete `proxied: false` stil overrulen. De eerste versie deed dat
+  ook echt — de testcase `proxied-uit-op-live` ving het.
+- Renderharnas kreeg `hasKey` (spiegelt sprig). Drie nieuwe testcases:
+  `proxied-default-live`, `proxied-default-accept`, `proxied-uit-op-live`.
+- Effect op de vloot bij de volgende sync: 17 live-tenants onder `*.openwoo.app`
+  krijgen AAAA. De 12 live-tenants op een klantdomein zien een no-op (external-dns
+  beheert die zones niet) en de 38 accept-tenants blijven DNS-only.
+- Bewezen op `canary.openwoo.app`: 200 en 5 MB over IPv6, en onze security-headers
+  komen ongeschonden door de edge.
+
+
 ### Toegevoegd — 2026-08-18 (IPv6 via de Cloudflare-proxy, per tenant aan te zetten)
 - Nieuw veld `tenant.frontend.proxied`. Staat het op `true`, dan emit de
   ApplicationSet `external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"` op

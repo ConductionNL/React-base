@@ -12,30 +12,20 @@ global:
   # ingress.annotations hieronder.
   tls: false
 pwa:
-  # Per-tenant image-pin (tenant.frontend.registry/repository/tag).
-  # Een pin hier is bindend: Argo reconcilieert de image dan wél
-  # (zie ignoreDifferences onderaan — die wordt voor deze tenant
-  # niet geëmit). Zonder pin geldt de platform-default uit
-  # values/common.yaml en blijft live bijstellen in Argo mogelijk.
-  image:
-    tag: "latest"
   upstream:
     host: "buren.commonground.nu"
     base: "https://buren.commonground.nu/apps/opencatalogi/api"
   env:
-    GATSBY_ORGANISATION_NAME: "Gemeente Buren"
     # NL Design theme — ALWAYS emitted; baseline conduction-theme, dev-editable LIVE (ignore-diff).
     # Key MUST be GATSBY_-prefixed: the Gatsby app only reads GATSBY_NL_DESIGN_THEME_CLASSNAME
     # client-side (verified in the JS bundle). The un-prefixed key is ignored by the app.
-    GATSBY_NL_DESIGN_THEME_CLASSNAME: "buren-theme"
+    GATSBY_NL_DESIGN_THEME_CLASSNAME: "conduction-theme"
 ingress:
   # TLS: default = shared wildcard (wildcard-openwoo-tls, reflected into this
   # namespace by reflector; NO issuer annotation → zero per-tenant issuance).
   # Custom-domain tenants (not under *.openwoo.app) set frontend.tls to get their
   # own cert: issuer != "none" adds cert-manager.io/cluster-issuer for a per-host
   # cert; issuer "none" references a pre-seeded/BYO secret with no annotation.
-  annotations:
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
   # Geen `hosts:`-entry voor de primaire host — de chart maakt al een rule
   # op `global.domain`; een tweede via `ingress.hosts` zou dubbel zijn.
   # Alleen frontend.extraHosts komen hier als extra rules bij.

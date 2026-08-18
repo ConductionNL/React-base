@@ -140,6 +140,31 @@ Bij een issuer-tak zet de ApplicationSet er twee annotaties bij:
 RSA-2048 is in de audit van 2026-08-18 als phase-out aangemerkt. Je hoeft hier
 niets voor te zetten; het geldt voor elke tenant met een eigen certificaat.
 
+### IPv6 via de proxy (`frontend.proxied`)
+
+De ApplicationSet zet `external-dns.alpha.kubernetes.io/cloudflare-proxied` op de
+Ingress, waarna external-dns het DNS-record achter de Cloudflare-proxy zet. Dat
+levert AAAA op zonder dat onze loadbalancer IPv6 doet.
+
+**Default: aan voor de live-omgeving, uit voor accept.** Dat is geen
+voorzichtigheid maar een certificaatgrens: Universal SSL dekt `openwoo.app` en
+`*.openwoo.app`, en géén tweede niveau zoals `*.accept.openwoo.app`. Een
+geproxiede accept-host geeft daardoor een TLS-handshakefout — gemeten op
+`canary.accept.openwoo.app` (2026-08-18). Accept meedoen kan pas met Advanced
+Certificate Manager op de zone.
+
+`frontend.proxied` overruled de default in beide richtingen:
+
+    frontend:
+      proxied: false    # deze live-tenant niet proxyen
+
+Voor een tenant op een eigen klantdomein is de annotatie een no-op: external-dns
+beheert alleen `openwoo.app`, `commonground.nu` en `opencatalogi.nl`. Zo'n host
+krijgt IPv6 via Cloudflare for SaaS — zie `cluster-infra/docs/cloudflare-ipv6.md`.
+
+Voorwaarde aan de Cloudflare-kant is één Configuration Rule met SSL Full (strict);
+die staat en dekt met een negatieve match ook elke nieuwe host.
+
 ### `/.well-known/`-bestanden (`frontend.wellKnown`)
 
 Optioneel blok waarmee een tenant bestanden onder `/.well-known/` serveert. De

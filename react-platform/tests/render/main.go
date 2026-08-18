@@ -60,6 +60,17 @@ func funcs() template.FuncMap {
 		// lege regel. Dat is precies wat een YAML-blokscalar nodig heeft (een
 		// regel met alleen padding leest als lege regel), en het houdt een
 		// PGP-ondertekende tekst byte-exact.
+		// hasKey onderscheidt "sleutel ontbreekt" van "sleutel staat op false".
+		// `default` kan dat niet: die ziet false als leeg en geeft de default terug,
+		// waardoor een expliciete `proxied: false` zou worden overruled.
+		"hasKey": func(m any, k string) bool {
+			mm, ok := m.(map[string]any)
+			if !ok {
+				return false
+			}
+			_, found := mm[k]
+			return found
+		},
 		"indent":  indent,
 		"nindent": func(spaces int, v string) string { return "\n" + indent(spaces, v) },
 	}

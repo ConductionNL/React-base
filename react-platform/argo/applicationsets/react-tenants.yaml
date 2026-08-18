@@ -266,13 +266,24 @@ spec:
                 # Custom-domain tenants (not under *.openwoo.app) set frontend.tls to get their
                 # own cert: issuer != "none" adds cert-manager.io/cluster-issuer for a per-host
                 # cert; issuer "none" references a pre-seeded/BYO secret with no annotation.
-                {{- /* frontend.proxied: true zet het DNS-record van deze host achter de
-                       Cloudflare-proxy. Dat levert IPv6 op zonder dat onze LB IPv6 hoeft
-                       te doen. Alleen zinvol voor hosts in een zone die external-dns
-                       beheert (openwoo.app, commonground.nu, opencatalogi.nl); voor een
-                       klantdomein is het een no-op. Het wildcard-certificaat komt van
-                       DNS-01, dus de proxy raakt de vernieuwing niet. */ -}}
-                {{- $proxied := index $fe "proxied" }}
+                {{- /* De Cloudflare-proxy zet AAAA op de host zonder dat onze LB IPv6
+                       hoeft te doen. Het wildcard-certificaat komt van DNS-01, dus de
+                       proxy raakt de vernieuwing niet.
+
+                       DEFAULT: aan voor de live-omgeving, uit voor accept. Niet uit
+                       voorzichtigheid maar omdat Cloudflare's Universal SSL
+                       `openwoo.app` en `*.openwoo.app` dekt en géén tweede niveau
+                       zoals `*.accept.openwoo.app`. Een geproxiede accept-host geeft
+                       daardoor een TLS-handshakefout; gemeten op
+                       canary.accept.openwoo.app (2026-08-18). Accept meedoen kan pas
+                       met Advanced Certificate Manager op de zone — zet dan
+                       `frontend.proxied: true` op die tenants, of draai deze default om.
+
+                       `frontend.proxied` overruled de default in beide richtingen.
+                       Voor een klanthostnaam is de annotatie een no-op: external-dns
+                       beheert alleen onze eigen drie zones. */ -}}
+                {{- $proxied := eq $env "prod" }}
+                {{- if hasKey $fe "proxied" }}{{- $proxied = index $fe "proxied" }}{{- end }}
                 {{- if or (and $tlsIssuer (ne $tlsIssuer "none")) $proxied }}
                 annotations:
                   {{- if $proxied }}
