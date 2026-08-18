@@ -266,8 +266,19 @@ spec:
                 # Custom-domain tenants (not under *.openwoo.app) set frontend.tls to get their
                 # own cert: issuer != "none" adds cert-manager.io/cluster-issuer for a per-host
                 # cert; issuer "none" references a pre-seeded/BYO secret with no annotation.
-                {{- if and $tlsIssuer (ne $tlsIssuer "none") }}
+                {{- /* frontend.proxied: true zet het DNS-record van deze host achter de
+                       Cloudflare-proxy. Dat levert IPv6 op zonder dat onze LB IPv6 hoeft
+                       te doen. Alleen zinvol voor hosts in een zone die external-dns
+                       beheert (openwoo.app, commonground.nu, opencatalogi.nl); voor een
+                       klantdomein is het een no-op. Het wildcard-certificaat komt van
+                       DNS-01, dus de proxy raakt de vernieuwing niet. */ -}}
+                {{- $proxied := index $fe "proxied" }}
+                {{- if or (and $tlsIssuer (ne $tlsIssuer "none")) $proxied }}
                 annotations:
+                  {{- if $proxied }}
+                  external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+                  {{- end }}
+                  {{- if and $tlsIssuer (ne $tlsIssuer "none") }}
                   cert-manager.io/cluster-issuer: "{{ $tlsIssuer }}"
                   # RSA-2048 = phase-out (audit 2026-08-18) → ECDSA P-256.
                   # cert-manager v1.18 leest deze annotaties op de Ingress en
@@ -275,6 +286,7 @@ spec:
                   # dus éénmalig een nieuw certificaat per geraakte tenant.
                   cert-manager.io/private-key-algorithm: ECDSA
                   cert-manager.io/private-key-size: "256"
+                  {{- end }}
                 {{- end }}
                 # Geen `hosts:`-entry voor de primaire host — de chart maakt al een rule
                 # op `global.domain`; een tweede via `ingress.hosts` zou dubbel zijn.

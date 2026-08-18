@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Toegevoegd — 2026-08-18 (IPv6 via de Cloudflare-proxy, per tenant aan te zetten)
+- Nieuw veld `tenant.frontend.proxied`. Staat het op `true`, dan emit de
+  ApplicationSet `external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"` op
+  de Ingress en zet external-dns het DNS-record achter de proxy. Dat levert AAAA
+  op zonder dat onze loadbalancer IPv6 hoeft te doen.
+- **Niet in `values/common.yaml`,** hoe verleidelijk ook. Alle 92 frontend-apps
+  staan op auto-sync met selfHeal; een platform-default zou de hele vloot binnen
+  minuten proxyen. Vandaag gemeten: 72 van 92 apps waren drie minuten na een push
+  al op de nieuwe revisie. Canary eerst betekent dus per tenant, niet per default.
+- Aangezet op `canary-accept` (wave 0). Bestaande tenants renderen byte-identiek:
+  van de 22 goldens veranderde er geen, er kwamen alleen twee nieuwe bij voor de
+  testcase `proxied`.
+- Voorwaarde aan de Cloudflare-kant: een Configuration Rule met SSL Full (strict)
+  voor de geproxiede host. De zone staat op Flexible en kan niet zone-breed om —
+  zie `cluster-infra/docs/cloudflare-ipv6.md`.
+- Veilig voor `*.openwoo.app` omdat dat wildcard via `letsencrypt-dns` (DNS-01)
+  vernieuwt; er loopt geen HTTP-challenge door de proxy.
+
+
 ### Toegevoegd — 2026-08-18 (security-response-headers en ECDSA-certificaatsleutel)
 - Aanleiding: audit op `open.dinkelland.nl`. Gemeten op 2026-08-18 ontbraken
   `Content-Security-Policy`, `X-Frame-Options` en `Referrer-Policy`; HSTS en
